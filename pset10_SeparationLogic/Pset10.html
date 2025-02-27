@@ -1,0 +1,370 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title></title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Pset10</h1>
+
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Frap</span> <span class="id" title="var">Pset10.Pset10Sig</span>.<br/>
+</div>
+
+<div class="doc">
+<a id="lab1"></a><h1 class="section">6.512 Formal Reasoning About Programs, Spring 2023 - Pset 10</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab2"></a><h1 class="section">EXAMPLE VERIFICATION: linked-list length revisited</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">llist'</span> (<span class="id" title="var">ls</span> : <span class="id" title="var">list</span> <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">ls</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">nil</span> =&gt; [| <span class="id" title="var">p</span> = 0 |]<br/>
+&nbsp;&nbsp;| <span class="id" title="var">x</span> :: <span class="id" title="var">ls'</span> =&gt; [| <span class="id" title="var">p</span> &lt;&gt; 0 |] * <span class="id" title="tactic">exists</span> <span class="id" title="var">p'</span>, <span class="id" title="var">p</span> |--&gt; [<span class="id" title="var">x</span>; <span class="id" title="var">p'</span>] * <span class="id" title="var">llist'</span> <span class="id" title="var">ls'</span> <span class="id" title="var">p'</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">llist</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;(<span class="id" title="tactic">exists</span> <span class="id" title="var">ls</span>, <span class="id" title="var">llist'</span> <span class="id" title="var">ls</span> <span class="id" title="var">p</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">llist'_null</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">ls</span> <span class="id" title="var">p</span>}, <span class="id" title="var">p</span> = 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">llist'</span> <span class="id" title="var">ls</span> <span class="id" title="var">p</span> === [| <span class="id" title="var">ls</span> = <span class="id" title="var">nil</span> |].<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">llist_null</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span>, <span class="id" title="var">p</span> = 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">llist</span> <span class="id" title="var">p</span> === <span class="id" title="var">emp</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">llist'_nonnull</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">ls</span> <span class="id" title="var">p</span>}, <span class="id" title="var">p</span> &lt;&gt; 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">llist'</span> <span class="id" title="var">ls</span> <span class="id" title="var">p</span> === <span class="id" title="tactic">exists</span> <span class="id" title="var">ls'</span> <span class="id" title="var">x</span> <span class="id" title="var">p'</span>, [| <span class="id" title="var">ls</span> = <span class="id" title="var">x</span> :: <span class="id" title="var">ls'</span> |] * <span class="id" title="var">p</span> |--&gt; [<span class="id" title="var">x</span>; <span class="id" title="var">p'</span>] * <span class="id" title="var">llist'</span> <span class="id" title="var">ls'</span> <span class="id" title="var">p'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">llist_nonnull</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">p</span>}, <span class="id" title="var">p</span> &lt;&gt; 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">llist</span> <span class="id" title="var">p</span> === <span class="id" title="tactic">exists</span> <span class="id" title="var">x</span> <span class="id" title="var">p'</span>, <span class="id" title="var">p</span> |--&gt; [<span class="id" title="var">x</span>; <span class="id" title="var">p'</span>] * <span class="id" title="var">llist</span> <span class="id" title="var">p'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Opaque</span> <span class="id" title="var">llist</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">llength</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">for</span> <span class="id" title="var">a</span> := (<span class="id" title="var">p</span>, 0) <span class="id" title="var">loop</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">fst</span> <span class="id" title="var">a</span> ==<span class="id" title="var">n</span> 0 <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> (<span class="id" title="var">snd</span> <span class="id" title="var">a</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">fst</span> <span class="id" title="var">a</span> + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> (<span class="id" title="var">y</span>, <span class="id" title="var">snd</span> <span class="id" title="var">a</span> + 1))<br/>
+&nbsp;&nbsp;<span class="id" title="var">done</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">llength_ok</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">llist</span> <span class="id" title="var">p</span> }}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">llength</span> <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">_</span> ~&gt; <span class="id" title="var">llist</span> <span class="id" title="var">p</span> }}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h1 class="section">Binary trees</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">mtree'</span> (<span class="id" title="var">t</span> : <span class="id" title="var">tree</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">t</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Leaf</span> =&gt; [| <span class="id" title="var">p</span> = 0 |]<br/>
+&nbsp;&nbsp;| <span class="id" title="var">Node</span> <span class="id" title="var">l</span> <span class="id" title="var">x</span> <span class="id" title="var">r</span> =&gt; [| <span class="id" title="var">p</span> &lt;&gt; 0 |]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="tactic">exists</span> <span class="id" title="var">p1</span> <span class="id" title="var">p2</span>, <span class="id" title="var">p</span> |--&gt; [<span class="id" title="var">p1</span>; <span class="id" title="var">x</span>; <span class="id" title="var">p2</span>]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="var">mtree'</span> <span class="id" title="var">l</span> <span class="id" title="var">p1</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="var">mtree'</span> <span class="id" title="var">r</span> <span class="id" title="var">p2</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">mtree</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="tactic">exists</span> <span class="id" title="var">t</span>, <span class="id" title="var">mtree'</span> <span class="id" title="var">t</span> <span class="id" title="var">p</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">mtreep</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="tactic">exists</span> <span class="id" title="var">p'</span>, [| <span class="id" title="var">p</span> &lt;&gt; 0 |] * <span class="id" title="var">p</span> |-&gt; <span class="id" title="var">p'</span> * <span class="id" title="var">mtree</span> <span class="id" title="var">p'</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">mtree'_null</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">t</span> <span class="id" title="var">r</span>}, <span class="id" title="var">r</span> = 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">mtree'</span> <span class="id" title="var">t</span> <span class="id" title="var">r</span> === [| <span class="id" title="var">t</span> = <span class="id" title="var">Leaf</span> |].<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">mtree'_nonnull</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">t</span> <span class="id" title="var">r</span>}, <span class="id" title="var">r</span> &lt;&gt; 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">mtree'</span> <span class="id" title="var">t</span> <span class="id" title="var">r</span> === <span class="id" title="tactic">exists</span> <span class="id" title="var">t1</span> <span class="id" title="var">t2</span> <span class="id" title="var">x</span> <span class="id" title="var">r1</span> <span class="id" title="var">r2</span>, [| <span class="id" title="var">t</span> = <span class="id" title="var">Node</span> <span class="id" title="var">t1</span> <span class="id" title="var">x</span> <span class="id" title="var">t2</span> |] * <span class="id" title="var">r</span> |--&gt; [<span class="id" title="var">r1</span>; <span class="id" title="var">x</span>; <span class="id" title="var">r2</span>] * <span class="id" title="var">mtree'</span> <span class="id" title="var">t1</span> <span class="id" title="var">r1</span> * <span class="id" title="var">mtree'</span> <span class="id" title="var">t2</span> <span class="id" title="var">r2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">mtree_nonnull</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">r</span>}, <span class="id" title="var">r</span> &lt;&gt; 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">mtree</span> <span class="id" title="var">r</span> === <span class="id" title="tactic">exists</span> <span class="id" title="var">r1</span> <span class="id" title="var">x</span> <span class="id" title="var">r2</span>, <span class="id" title="var">r</span> |--&gt; [<span class="id" title="var">r1</span>; <span class="id" title="var">x</span>; <span class="id" title="var">r2</span>] * <span class="id" title="var">mtree</span> <span class="id" title="var">r1</span> * <span class="id" title="var">mtree</span> <span class="id" title="var">r2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">mtree_null</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">r</span>, <span class="id" title="var">r</span> = 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">mtree</span> <span class="id" title="var">r</span> === <span class="id" title="var">emp</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Opaque</span> <span class="id" title="var">mtree</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">lookup</span> (<span class="id" title="var">x</span> <span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">t</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">p</span>; <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">for</span> <span class="id" title="var">a</span> := <span class="id" title="var">t</span> <span class="id" title="var">loop</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">a</span> ==<span class="id" title="var">n</span> 0 <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">a</span> + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">x</span> ==<span class="id" title="var">n</span> <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">true</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="keyword">if</span> <span class="id" title="var">x</span> &lt;=? <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">l</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">a</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">l</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">r</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">a</span> + 1 + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;<span class="id" title="var">done</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">lookup_ok</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">lookup</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">_</span> ~&gt; <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">insert</span> (<span class="id" title="var">x</span> <span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">for</span> <span class="id" title="var">a</span> := <span class="id" title="var">p</span> <span class="id" title="var">loop</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">q</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">a</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">q</span> ==<span class="id" title="var">n</span> 0 <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">node</span> &lt;- <span class="id" title="var">Alloc</span> 3;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">_</span> &lt;- <span class="id" title="var">Write</span> (<span class="id" title="var">node</span> + 1) <span class="id" title="var">x</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">_</span> &lt;- <span class="id" title="var">Write</span> <span class="id" title="var">a</span> <span class="id" title="var">node</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">tt</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">q</span> + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">x</span> &lt;=? <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">q</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> (<span class="id" title="var">q</span> + 1 + 1))<br/>
+&nbsp;&nbsp;<span class="id" title="var">done</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">insert_ok</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">insert</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;{{ <span class="id" title="var">_</span> ~&gt; <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="var">ImplCorrect</span> : <span class="id" title="var">Pset10Sig.S</span> := <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+</div>
+<table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>
+<h1>Global Index</h1>
+<a id="global_P"></a><h2>P </h2>
+<a href="Pset10.html">Pset10</a> [library]<br/>
+<br/><br/><hr/>
+<h1>Library Index</h1>
+<a id="library_P"></a><h2>P </h2>
+<a href="Pset10.html">Pset10</a> <br/>
+<br/><br/><hr/><table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

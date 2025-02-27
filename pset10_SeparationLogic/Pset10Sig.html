@@ -1,0 +1,2160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title></title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Pset10Sig</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a id="lab1"></a><h1 class="section">6.512 Formal Reasoning About Programs, Spring 2023 - Pset 10</h1>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="var">Coq816</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Frap</span> <span class="id" title="var">Setoid</span> <span class="id" title="var">Classes.Morphisms</span> <span class="id" title="var">SepCancel</span>.<br/>
+<span class="id" title="keyword">Export</span> <span class="id" title="var">Setoid</span> <span class="id" title="var">Classes.Morphisms</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Set Implicit Arguments</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab2"></a><h1 class="section">Shared notations and definitions; main material starts afterward.</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;m $! k" := (<span class="id" title="keyword">match</span> <span class="id" title="var">m</span> $? <span class="id" title="var">k</span> <span class="id" title="keyword">with</span> <span class="id" title="var">Some</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">n</span> | <span class="id" title="var">None</span> =&gt; <span class="id" title="var">O</span> <span class="id" title="keyword">end</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 30).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">heap</span> := <span class="id" title="var">fmap</span> <span class="id" title="var">nat</span> <span class="id" title="var">nat</span>.<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">assertion</span> := <span class="id" title="var">heap</span> -&gt; <span class="id" title="keyword">Prop</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Hint Extern</span> 1 (<span class="id" title="var">_</span> &lt;= <span class="id" title="var">_</span>) =&gt; <span class="id" title="var">linear_arithmetic</span> : <span class="id" title="var">core</span>.<br/>
+<span class="id" title="keyword">Global Hint Extern</span> 1 (@<span class="id" title="var">eq</span> <span class="id" title="var">nat</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span>) =&gt; <span class="id" title="var">linear_arithmetic</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">simp</span> := <span class="id" title="tactic">repeat</span> (<span class="id" title="var">simplify</span>; <span class="id" title="tactic">subst</span>; <span class="id" title="var">propositional</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">try</span> <span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <span class="id" title="var">H</span> : <span class="id" title="var">ex</span> <span class="id" title="var">_</span> |- <span class="id" title="var">_</span> ] =&gt; <span class="id" title="var">invert</span> <span class="id" title="var">H</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>); <span class="id" title="tactic">try</span> <span class="id" title="var">linear_arithmetic</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h1 class="section">Encore of last mixed-embedding language from last time</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">loop_outcome</span> <span class="id" title="var">acc</span> <span class="id" title="var">res</span> :=<br/>
+| <span class="id" title="var">Done</span> (<span class="id" title="var">r</span> : <span class="id" title="var">res</span>)<br/>
+| <span class="id" title="var">Again</span> (<span class="id" title="var">a</span> : <span class="id" title="var">acc</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Arguments</span> <span class="id" title="var">Done</span> {<span class="id" title="var">acc</span>} {<span class="id" title="var">res</span>}.<br/>
+<span class="id" title="keyword">Arguments</span> <span class="id" title="var">Again</span> {<span class="id" title="var">acc</span>} {<span class="id" title="var">res</span>}.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">cmd</span> : <span class="id" title="keyword">Set</span> -&gt; <span class="id" title="keyword">Type</span> :=<br/>
+| <span class="id" title="var">Return</span> {<span class="id" title="var">result</span> : <span class="id" title="keyword">Set</span>} (<span class="id" title="var">r</span> : <span class="id" title="var">result</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span><br/>
+| <span class="id" title="keyword">Bind</span> {<span class="id" title="var">result</span> <span class="id" title="var">result'</span>} (<span class="id" title="var">c1</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result'</span>) (<span class="id" title="var">c2</span> : <span class="id" title="var">result'</span> -&gt; <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span><br/>
+| <span class="id" title="var">Read</span> (<span class="id" title="var">a</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">nat</span><br/>
+| <span class="id" title="var">Write</span> (<span class="id" title="var">a</span> <span class="id" title="var">v</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">unit</span><br/>
+| <span class="id" title="var">Loop</span> {<span class="id" title="var">acc</span> <span class="id" title="var">res</span> : <span class="id" title="keyword">Set</span>} (<span class="id" title="var">init</span> : <span class="id" title="var">acc</span>) (<span class="id" title="var">body</span> : <span class="id" title="var">acc</span> -&gt; <span class="id" title="var">cmd</span> (<span class="id" title="var">loop_outcome</span> <span class="id" title="var">acc</span> <span class="id" title="var">res</span>)) : <span class="id" title="var">cmd</span> <span class="id" title="var">res</span><br/>
+| <span class="id" title="var">Fail</span> {<span class="id" title="var">result</span>} : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span><br/>
+| <span class="id" title="var">Alloc</span> (<span class="id" title="var">numWords</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">nat</span><br/>
+| <span class="id" title="var">Free</span> (<span class="id" title="var">base</span> <span class="id" title="var">numWords</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">cmd</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;x &lt;- c1 ; c2" := (<span class="id" title="keyword">Bind</span> <span class="id" title="var">c1</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">c2</span>)) (<span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 80).<br/>
+<span class="id" title="keyword">Notation</span> &quot;'for' x := i 'loop' c1 'done'" := (<span class="id" title="var">Loop</span> <span class="id" title="var">i</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">c1</span>)) (<span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 80).<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">initialize</span> (<span class="id" title="var">h</span> : <span class="id" title="var">heap</span>) (<span class="id" title="var">base</span> <span class="id" title="var">numWords</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">heap</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">numWords</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">O</span> =&gt; <span class="id" title="var">h</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">numWords'</span> =&gt; <span class="id" title="var">initialize</span> <span class="id" title="var">h</span> <span class="id" title="var">base</span> <span class="id" title="var">numWords'</span> $+ (<span class="id" title="var">base</span> + <span class="id" title="var">numWords'</span>, 0)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">deallocate</span> (<span class="id" title="var">h</span> : <span class="id" title="var">heap</span>) (<span class="id" title="var">base</span> <span class="id" title="var">numWords</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">heap</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">numWords</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">O</span> =&gt; <span class="id" title="var">h</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">numWords'</span> =&gt; <span class="id" title="var">deallocate</span> (<span class="id" title="var">h</span> $- <span class="id" title="var">base</span>) (<span class="id" title="var">base</span>+1) <span class="id" title="var">numWords'</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">step</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span>, <span class="id" title="var">heap</span> * <span class="id" title="var">cmd</span> <span class="id" title="var">A</span> -&gt; <span class="id" title="var">heap</span> * <span class="id" title="var">cmd</span> <span class="id" title="var">A</span> -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+| <span class="id" title="var">StepBindRecur</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">result</span> <span class="id" title="var">result'</span> (<span class="id" title="var">c1</span> <span class="id" title="var">c1'</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result'</span>) (<span class="id" title="var">c2</span> : <span class="id" title="var">result'</span> -&gt; <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">h</span> <span class="id" title="var">h'</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">c1</span>) (<span class="id" title="var">h'</span>, <span class="id" title="var">c1'</span>)<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="keyword">Bind</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span>) (<span class="id" title="var">h'</span>, <span class="id" title="keyword">Bind</span> <span class="id" title="var">c1'</span> <span class="id" title="var">c2</span>)<br/>
+| <span class="id" title="var">StepBindProceed</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">result</span> <span class="id" title="var">result'</span> : <span class="id" title="keyword">Set</span>) (<span class="id" title="var">v</span> : <span class="id" title="var">result'</span>) (<span class="id" title="var">c2</span> : <span class="id" title="var">result'</span> -&gt; <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">h</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="keyword">Bind</span> (<span class="id" title="var">Return</span> <span class="id" title="var">v</span>) <span class="id" title="var">c2</span>) (<span class="id" title="var">h</span>, <span class="id" title="var">c2</span> <span class="id" title="var">v</span>)<br/>
+<br/>
+| <span class="id" title="var">StepLoop</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">acc</span> <span class="id" title="var">res</span> : <span class="id" title="keyword">Set</span>) (<span class="id" title="var">init</span> : <span class="id" title="var">acc</span>) (<span class="id" title="var">body</span> : <span class="id" title="var">acc</span> -&gt; <span class="id" title="var">cmd</span> (<span class="id" title="var">loop_outcome</span> <span class="id" title="var">acc</span> <span class="id" title="var">res</span>)) <span class="id" title="var">h</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">Loop</span> <span class="id" title="var">init</span> <span class="id" title="var">body</span>) (<span class="id" title="var">h</span>, <span class="id" title="var">o</span> &lt;- <span class="id" title="var">body</span> <span class="id" title="var">init</span>; <span class="id" title="keyword">match</span> <span class="id" title="var">o</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Done</span> <span class="id" title="var">a</span> =&gt; <span class="id" title="var">Return</span> <span class="id" title="var">a</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Again</span> <span class="id" title="var">a</span> =&gt; <span class="id" title="var">Loop</span> <span class="id" title="var">a</span> <span class="id" title="var">body</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>)<br/>
+<br/>
+| <span class="id" title="var">StepRead</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">h</span> $? <span class="id" title="var">a</span> = <span class="id" title="var">Some</span> <span class="id" title="var">v</span><br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">Read</span> <span class="id" title="var">a</span>) (<span class="id" title="var">h</span>, <span class="id" title="var">Return</span> <span class="id" title="var">v</span>)<br/>
+| <span class="id" title="var">StepWrite</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span> <span class="id" title="var">v'</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">h</span> $? <span class="id" title="var">a</span> = <span class="id" title="var">Some</span> <span class="id" title="var">v</span><br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">Write</span> <span class="id" title="var">a</span> <span class="id" title="var">v'</span>) (<span class="id" title="var">h</span> $+ (<span class="id" title="var">a</span>, <span class="id" title="var">v'</span>), <span class="id" title="var">Return</span> <span class="id" title="var">tt</span>)<br/>
+<br/>
+| <span class="id" title="var">StepAlloc</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span> <span class="id" title="var">numWords</span> <span class="id" title="var">a</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">i</span>, <span class="id" title="var">i</span> &lt; <span class="id" title="var">numWords</span> -&gt; <span class="id" title="var">h</span> $? (<span class="id" title="var">a</span> + <span class="id" title="var">i</span>) = <span class="id" title="var">None</span>)<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">a</span> &lt;&gt; 0<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">Alloc</span> <span class="id" title="var">numWords</span>) (<span class="id" title="var">initialize</span> <span class="id" title="var">h</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>, <span class="id" title="var">Return</span> <span class="id" title="var">a</span>)<br/>
+<br/>
+<br/>
+| <span class="id" title="var">StepFree</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">step</span> (<span class="id" title="var">h</span>, <span class="id" title="var">Free</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>) (<span class="id" title="var">deallocate</span> <span class="id" title="var">h</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>, <span class="id" title="var">Return</span> <span class="id" title="var">tt</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">trsys_of</span> (<span class="id" title="var">h</span> : <span class="id" title="var">heap</span>) {<span class="id" title="var">result</span>} (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) := {|<br/>
+&nbsp;&nbsp;<span class="id" title="var">Initial</span> := {(<span class="id" title="var">h</span>, <span class="id" title="var">c</span>)};<br/>
+&nbsp;&nbsp;<span class="id" title="var">Step</span> := <span class="id" title="var">step</span> (<span class="id" title="var">A</span> := <span class="id" title="var">result</span>)<br/>
+|}.<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Sep</span> &lt;: <span class="id" title="var">SEP</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">hprop</span> := <span class="id" title="var">heap</span> -&gt; <span class="id" title="keyword">Prop</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">himp</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">hprop</span>) := <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span>, <span class="id" title="var">p</span> <span class="id" title="var">h</span> -&gt; <span class="id" title="var">q</span> <span class="id" title="var">h</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">heq</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">hprop</span>) := <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span>, <span class="id" title="var">p</span> <span class="id" title="var">h</span> &lt;-&gt; <span class="id" title="var">q</span> <span class="id" title="var">h</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">lift</span> (<span class="id" title="var">P</span> : <span class="id" title="keyword">Prop</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">h</span> =&gt; <span class="id" title="var">P</span> /\ <span class="id" title="var">h</span> = $0.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">star</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">hprop</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">h</span> =&gt; <span class="id" title="tactic">exists</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span>, <span class="id" title="tactic">split</span> <span class="id" title="var">h</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> /\ <span class="id" title="var">disjoint</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> /\ <span class="id" title="var">p</span> <span class="id" title="var">h1</span> /\ <span class="id" title="var">q</span> <span class="id" title="var">h2</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">exis</span> <span class="id" title="var">A</span> (<span class="id" title="var">p</span> : <span class="id" title="var">A</span> -&gt; <span class="id" title="var">hprop</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">h</span> =&gt; <span class="id" title="tactic">exists</span> <span class="id" title="var">x</span>, <span class="id" title="var">p</span> <span class="id" title="var">x</span> <span class="id" title="var">h</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Declare Scope</span> <span class="id" title="var">sep_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Notation</span> &quot;[| P |]" := (<span class="id" title="var">lift</span> <span class="id" title="var">P</span>) : <span class="id" title="var">sep_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Infix</span> &quot;*" := <span class="id" title="var">star</span> : <span class="id" title="var">sep_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Notation</span> &quot;'exists' x .. y , p" := (<span class="id" title="var">exis</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; .. (<span class="id" title="var">exis</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">y</span> =&gt; <span class="id" title="var">p</span>)) ..)) : <span class="id" title="var">sep_scope</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Delimit</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">sep_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">sep</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Notation</span> &quot;p === q" := (<span class="id" title="var">heq</span> <span class="id" title="var">p</span>%<span class="id" title="var">sep</span> <span class="id" title="var">q</span>%<span class="id" title="var">sep</span>) (<span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Notation</span> &quot;p ===&gt; q" := (<span class="id" title="var">himp</span> <span class="id" title="var">p</span>%<span class="id" title="var">sep</span> <span class="id" title="var">q</span>%<span class="id" title="var">sep</span>) (<span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Local Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">sep_scope</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <span class="id" title="var">iff_two</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span> (<span class="id" title="var">P</span> <span class="id" title="var">Q</span> : <span class="id" title="var">A</span> -&gt; <span class="id" title="keyword">Prop</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">P</span> <span class="id" title="var">x</span> &lt;-&gt; <span class="id" title="var">Q</span> <span class="id" title="var">x</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; (<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">P</span> <span class="id" title="var">x</span> -&gt; <span class="id" title="var">Q</span> <span class="id" title="var">x</span>) /\ (<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">Q</span> <span class="id" title="var">x</span> -&gt; <span class="id" title="var">P</span> <span class="id" title="var">x</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Local Ltac</span> <span class="id" title="var">t</span> := (<span class="id" title="tactic">unfold</span> <span class="id" title="var">himp</span>, <span class="id" title="var">heq</span>, <span class="id" title="var">lift</span>, <span class="id" title="var">star</span>, <span class="id" title="var">exis</span>; <span class="id" title="var">propositional</span>; <span class="id" title="tactic">subst</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">repeat</span> (<span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <span class="id" title="var">H</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">_</span> &lt;-&gt; <span class="id" title="var">_</span> |- <span class="id" title="var">_</span>  ] =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">iff_two</span> <span class="id" title="tactic">in</span> <span class="id" title="var">H</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <span class="id" title="var">H</span> : <span class="id" title="var">ex</span> <span class="id" title="var">_</span> |- <span class="id" title="var">_</span> ] =&gt; <span class="id" title="tactic">destruct</span> <span class="id" title="var">H</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <span class="id" title="var">H</span> : <span class="id" title="tactic">split</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> $0 |- <span class="id" title="var">_</span> ] =&gt; <span class="id" title="tactic">apply</span> <span class="id" title="var">split_empty_fwd</span> <span class="id" title="tactic">in</span> <span class="id" title="var">H</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>; <span class="id" title="var">propositional</span>; <span class="id" title="tactic">subst</span>); <span class="id" title="tactic">eauto</span> 15.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">himp_heq</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>, <span class="id" title="var">p</span> === <span class="id" title="var">q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;-&gt; (<span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span> /\ <span class="id" title="var">q</span> ===&gt; <span class="id" title="var">p</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">himp_refl</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span>, <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">p</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">himp_trans</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span>, <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span> -&gt; <span class="id" title="var">q</span> ===&gt; <span class="id" title="var">r</span> -&gt; <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">r</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">lift_left</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> (<span class="id" title="var">Q</span> : <span class="id" title="keyword">Prop</span>) <span class="id" title="var">r</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">Q</span> -&gt; <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">p</span> * [| <span class="id" title="var">Q</span> |] ===&gt; <span class="id" title="var">r</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">lift_right</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> (<span class="id" title="var">R</span> : <span class="id" title="keyword">Prop</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">R</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span> * [| <span class="id" title="var">R</span> |].<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Local Hint Resolve</span> <span class="id" title="var">split_empty_bwd'</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">extra_lift</span> : <span class="id" title="keyword">forall</span> (<span class="id" title="var">P</span> : <span class="id" title="keyword">Prop</span>) <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">P</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">p</span> === [| <span class="id" title="var">P</span> |] * <span class="id" title="var">p</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">star_comm</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>, <span class="id" title="var">p</span> * <span class="id" title="var">q</span> === <span class="id" title="var">q</span> * <span class="id" title="var">p</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">star_assoc</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span>, <span class="id" title="var">p</span> * (<span class="id" title="var">q</span> * <span class="id" title="var">r</span>) === (<span class="id" title="var">p</span> * <span class="id" title="var">q</span>) * <span class="id" title="var">r</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">star_cancel</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p1</span> <span class="id" title="var">p2</span> <span class="id" title="var">q1</span> <span class="id" title="var">q2</span>, <span class="id" title="var">p1</span> ===&gt; <span class="id" title="var">p2</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">q1</span> ===&gt; <span class="id" title="var">q2</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">p1</span> * <span class="id" title="var">q1</span> ===&gt; <span class="id" title="var">p2</span> * <span class="id" title="var">q2</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">exis_gulp</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span> <span class="id" title="var">p</span> (<span class="id" title="var">q</span> : <span class="id" title="var">A</span> -&gt; <span class="id" title="var">_</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p</span> * <span class="id" title="var">exis</span> <span class="id" title="var">q</span> === <span class="id" title="var">exis</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">p</span> * <span class="id" title="var">q</span> <span class="id" title="var">x</span>).<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">exis_left</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span> (<span class="id" title="var">p</span> : <span class="id" title="var">A</span> -&gt; <span class="id" title="var">_</span>) <span class="id" title="var">q</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">p</span> <span class="id" title="var">x</span> ===&gt; <span class="id" title="var">q</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">exis</span> <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">exis_right</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span> <span class="id" title="var">p</span> (<span class="id" title="var">q</span> : <span class="id" title="var">A</span> -&gt; <span class="id" title="var">_</span>) <span class="id" title="var">x</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p</span> ===&gt; <span class="id" title="var">q</span> <span class="id" title="var">x</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">p</span> ===&gt; <span class="id" title="var">exis</span> <span class="id" title="var">q</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Theorem</span> <span class="id" title="var">emp_heap</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">h</span>, <span class="id" title="var">lift</span> <span class="id" title="var">True</span> <span class="id" title="var">h</span> -&gt; <span class="id" title="var">h</span> = $0.<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Se</span> := <span class="id" title="var">SepCancel.Make</span>(<span class="id" title="var">Sep</span>).<br/>
+<span class="id" title="keyword">Export</span> <span class="id" title="var">Sep</span> <span class="id" title="var">Se</span>.<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">heap1</span> (<span class="id" title="var">a</span> <span class="id" title="var">v</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">heap</span> := $0 $+ (<span class="id" title="var">a</span>, <span class="id" title="var">v</span>).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">ptsto</span> (<span class="id" title="var">a</span> <span class="id" title="var">v</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">h</span> =&gt; <span class="id" title="var">h</span> = <span class="id" title="var">heap1</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">try_ptsto_first</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>, <span class="id" title="var">try_me_first</span> (<span class="id" title="var">ptsto</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Global Hint Resolve</span> <span class="id" title="var">try_ptsto_first</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;[| P |]" := (<span class="id" title="var">lift</span> <span class="id" title="var">P</span>) : <span class="id" title="var">sep_scope</span>.<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">emp</span> := (<span class="id" title="var">lift</span> <span class="id" title="var">True</span>).<br/>
+<span class="id" title="keyword">Infix</span> &quot;*" := <span class="id" title="var">star</span> : <span class="id" title="var">sep_scope</span>.<br/>
+<span class="id" title="keyword">Notation</span> &quot;'exists' x .. y , p" := (<span class="id" title="var">exis</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; .. (<span class="id" title="var">exis</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">y</span> =&gt; <span class="id" title="var">p</span>)) ..)) : <span class="id" title="var">sep_scope</span>.<br/>
+<span class="id" title="keyword">Delimit</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">sep_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">sep</span>.<br/>
+<span class="id" title="keyword">Notation</span> &quot;p === q" := (<span class="id" title="var">heq</span> <span class="id" title="var">p</span>%<span class="id" title="var">sep</span> <span class="id" title="var">q</span>%<span class="id" title="var">sep</span>) (<span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>
+<span class="id" title="keyword">Notation</span> &quot;p ===&gt; q" := (<span class="id" title="var">himp</span> <span class="id" title="var">p</span>%<span class="id" title="var">sep</span> <span class="id" title="var">q</span>%<span class="id" title="var">sep</span>) (<span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>, <span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>
+<span class="id" title="keyword">Infix</span> &quot;|-&gt;" := <span class="id" title="var">ptsto</span> (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 30) : <span class="id" title="var">sep_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">multi_ptsto</span> (<span class="id" title="var">a</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">vs</span> : <span class="id" title="var">list</span> <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">vs</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">nil</span> =&gt; <span class="id" title="var">emp</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">v</span> :: <span class="id" title="var">vs'</span> =&gt; <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span> * <span class="id" title="var">multi_ptsto</span> (<span class="id" title="var">a</span> + 1) <span class="id" title="var">vs'</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> &quot;|--&gt;" := <span class="id" title="var">multi_ptsto</span> (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 30) : <span class="id" title="var">sep_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">zeroes</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">list</span> <span class="id" title="var">nat</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">n</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">O</span> =&gt; <span class="id" title="var">nil</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">n'</span> =&gt; <span class="id" title="var">zeroes</span> <span class="id" title="var">n'</span> ++ 0 :: <span class="id" title="var">nil</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">allocated</span> (<span class="id" title="var">a</span> <span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">n</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">O</span> =&gt; <span class="id" title="var">emp</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">n'</span> =&gt; (<span class="id" title="tactic">exists</span> <span class="id" title="var">v</span>, <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span>) * <span class="id" title="var">allocated</span> (<span class="id" title="var">a</span>+1) <span class="id" title="var">n'</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> &quot;|-&gt;?" := <span class="id" title="var">allocated</span> (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 30) : <span class="id" title="var">sep_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab4"></a><h1 class="section">Finally, the Hoare logic</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">hoare_triple</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>}, <span class="id" title="var">assertion</span> -&gt; <span class="id" title="var">cmd</span> <span class="id" title="var">result</span> -&gt; (<span class="id" title="var">result</span> -&gt; <span class="id" title="var">assertion</span>) -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+| <span class="id" title="var">HtReturn</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> {<span class="id" title="var">result</span> : <span class="id" title="keyword">Set</span>} (<span class="id" title="var">v</span> : <span class="id" title="var">result</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> (<span class="id" title="var">Return</span> <span class="id" title="var">v</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">P</span> * [| <span class="id" title="var">r</span> = <span class="id" title="var">v</span> |])%<span class="id" title="var">sep</span><br/>
+| <span class="id" title="var">HtBind</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> {<span class="id" title="var">result'</span> <span class="id" title="var">result</span>} (<span class="id" title="var">c1</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result'</span>) (<span class="id" title="var">c2</span> : <span class="id" title="var">result'</span> -&gt; <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">Q</span> <span class="id" title="var">R</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c1</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; (<span class="id" title="keyword">forall</span> <span class="id" title="var">r</span>, <span class="id" title="var">hoare_triple</span> (<span class="id" title="var">Q</span> <span class="id" title="var">r</span>) (<span class="id" title="var">c2</span> <span class="id" title="var">r</span>) <span class="id" title="var">R</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> (<span class="id" title="keyword">Bind</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span>) <span class="id" title="var">R</span><br/>
+<br/>
+<br/>
+| <span class="id" title="var">HtLoop</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">acc</span> <span class="id" title="var">res</span> : <span class="id" title="keyword">Set</span>} (<span class="id" title="var">init</span> : <span class="id" title="var">acc</span>) (<span class="id" title="var">body</span> : <span class="id" title="var">acc</span> -&gt; <span class="id" title="var">cmd</span> (<span class="id" title="var">loop_outcome</span> <span class="id" title="var">acc</span> <span class="id" title="var">res</span>)) <span class="id" title="var">P</span> <span class="id" title="var">Q</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">acc</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="var">P</span> <span class="id" title="var">acc</span>) (<span class="id" title="var">body</span> <span class="id" title="var">acc</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">r</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Done</span> <span class="id" title="var">res</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Q</span> <span class="id" title="var">acc</span> <span class="id" title="var">res</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Again</span> <span class="id" title="var">acc'</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exists</span> <span class="id" title="var">R</span>, <span class="id" title="var">P</span> <span class="id" title="var">acc'</span> * <span class="id" title="var">R</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* [| <span class="id" title="keyword">forall</span> <span class="id" title="var">r</span>, <span class="id" title="var">Q</span> <span class="id" title="var">acc'</span> <span class="id" title="var">r</span> * <span class="id" title="var">R</span> ===&gt; <span class="id" title="var">Q</span> <span class="id" title="var">acc</span> <span class="id" title="var">r</span> |]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> (<span class="id" title="var">P</span> <span class="id" title="var">init</span>) (<span class="id" title="var">Loop</span> <span class="id" title="var">init</span> <span class="id" title="var">body</span>) (<span class="id" title="var">Q</span> <span class="id" title="var">init</span>)<br/>
+<br/>
+<br/>
+| <span class="id" title="var">HtFail</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>},<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">False</span>) (<span class="id" title="var">Fail</span> (<span class="id" title="var">result</span> := <span class="id" title="var">result</span>)) (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">False</span>)<br/>
+<br/>
+| <span class="id" title="var">HtRead</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">a</span> <span class="id" title="var">R</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="tactic">exists</span> <span class="id" title="var">v</span>, <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span> * <span class="id" title="var">R</span> <span class="id" title="var">v</span>)%<span class="id" title="var">sep</span> (<span class="id" title="var">Read</span> <span class="id" title="var">a</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">r</span> * <span class="id" title="var">R</span> <span class="id" title="var">r</span>)%<span class="id" title="var">sep</span><br/>
+| <span class="id" title="var">HtWrite</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span> <span class="id" title="var">v'</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span>)%<span class="id" title="var">sep</span> (<span class="id" title="var">Write</span> <span class="id" title="var">a</span> <span class="id" title="var">v'</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v'</span>)%<span class="id" title="var">sep</span><br/>
+| <span class="id" title="var">HtAlloc</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">numWords</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">emp</span>%<span class="id" title="var">sep</span> (<span class="id" title="var">Alloc</span> <span class="id" title="var">numWords</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; [| <span class="id" title="var">r</span> &lt;&gt; 0 |] * <span class="id" title="var">r</span> |--&gt; <span class="id" title="var">zeroes</span> <span class="id" title="var">numWords</span>)%<span class="id" title="var">sep</span><br/>
+| <span class="id" title="var">HtFree</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="var">a</span> |-&gt;? <span class="id" title="var">numWords</span>)%<span class="id" title="var">sep</span> (<span class="id" title="var">Free</span> <span class="id" title="var">a</span> <span class="id" title="var">numWords</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">emp</span>)%<span class="id" title="var">sep</span><br/>
+<br/>
+| <span class="id" title="var">HtConsequence</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>} (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">P</span> <span class="id" title="var">Q</span> (<span class="id" title="var">P'</span> : <span class="id" title="var">assertion</span>) (<span class="id" title="var">Q'</span> : <span class="id" title="var">_</span> -&gt; <span class="id" title="var">assertion</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">P'</span> ===&gt; <span class="id" title="var">P</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; (<span class="id" title="keyword">forall</span> <span class="id" title="var">r</span>, <span class="id" title="var">Q</span> <span class="id" title="var">r</span> ===&gt; <span class="id" title="var">Q'</span> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P'</span> <span class="id" title="var">c</span> <span class="id" title="var">Q'</span><br/>
+| <span class="id" title="var">HtFrame</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>} (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">P</span> <span class="id" title="var">Q</span> <span class="id" title="var">R</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> (<span class="id" title="var">P</span> * <span class="id" title="var">R</span>)%<span class="id" title="var">sep</span> <span class="id" title="var">c</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">Q</span> <span class="id" title="var">r</span> * <span class="id" title="var">R</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;{{ P }} c {{ r ~&gt; Q }}" :=<br/>
+&nbsp;&nbsp;(<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span>%<span class="id" title="var">sep</span> <span class="id" title="var">c</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">Q</span>%<span class="id" title="var">sep</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 90, <span class="id" title="var">c</span> <span class="id" title="tactic">at</span> <span class="id" title="var">next</span> <span class="id" title="keyword">level</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">format</span> "'[hv' {{ P }} '/'  c  '/' {{ r  ~&gt;  Q }} ']'").<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HtStrengthen</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>} (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">P</span> <span class="id" title="var">Q</span> (<span class="id" title="var">Q'</span> : <span class="id" title="var">_</span> -&gt; <span class="id" title="var">assertion</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; (<span class="id" title="keyword">forall</span> <span class="id" title="var">r</span>, <span class="id" title="var">Q</span> <span class="id" title="var">r</span> ===&gt; <span class="id" title="var">Q'</span> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> <span class="id" title="var">Q'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HtWeaken</span> : <span class="id" title="keyword">forall</span> {<span class="id" title="var">result</span>} (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) <span class="id" title="var">P</span> <span class="id" title="var">Q</span> (<span class="id" title="var">P'</span> : <span class="id" title="var">assertion</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">P'</span> ===&gt; <span class="id" title="var">P</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P'</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Instance</span> <span class="id" title="var">hoare_triple_morphism</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">A</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">Proper</span> (<span class="id" title="var">heq</span> ==&gt; <span class="id" title="var">eq</span> ==&gt; (<span class="id" title="var">eq</span> ==&gt; <span class="id" title="var">heq</span>) ==&gt; <span class="id" title="var">iff</span>) (@<span class="id" title="var">hoare_triple</span> <span class="id" title="var">A</span>).<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Transparent</span> <span class="id" title="var">himp</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Global Opaque</span> <span class="id" title="var">heq</span> <span class="id" title="var">himp</span> <span class="id" title="var">lift</span> <span class="id" title="var">star</span> <span class="id" title="var">exis</span> <span class="id" title="var">ptsto</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">use_lemma</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">result</span> <span class="id" title="var">P'</span> (<span class="id" title="var">c</span> : <span class="id" title="var">cmd</span> <span class="id" title="var">result</span>) (<span class="id" title="var">Q</span> : <span class="id" title="var">result</span> -&gt; <span class="id" title="var">assertion</span>) <span class="id" title="var">P</span> <span class="id" title="var">R</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> <span class="id" title="var">P'</span> <span class="id" title="var">c</span> <span class="id" title="var">Q</span><br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">P</span> ===&gt; <span class="id" title="var">P'</span> * <span class="id" title="var">R</span><br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> <span class="id" title="var">c</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">Q</span> <span class="id" title="var">r</span> * <span class="id" title="var">R</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">HtRead'</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">hoare_triple</span> (<span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span>)%<span class="id" title="var">sep</span> (<span class="id" title="var">Read</span> <span class="id" title="var">a</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">a</span> |-&gt; <span class="id" title="var">v</span> * [| <span class="id" title="var">r</span> = <span class="id" title="var">v</span> |])%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">HtRead''</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">p</span> <span class="id" title="var">P</span> <span class="id" title="var">R</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">P</span> ===&gt; (<span class="id" title="tactic">exists</span> <span class="id" title="var">v</span>, <span class="id" title="var">p</span> |-&gt; <span class="id" title="var">v</span> * <span class="id" title="var">R</span> <span class="id" title="var">v</span>)<br/>
+&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> (<span class="id" title="var">Read</span> <span class="id" title="var">p</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">r</span> =&gt; <span class="id" title="var">p</span> |-&gt; <span class="id" title="var">r</span> * <span class="id" title="var">R</span> <span class="id" title="var">r</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">HtReturn'</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">P</span> {<span class="id" title="var">result</span> : <span class="id" title="keyword">Set</span>} (<span class="id" title="var">v</span> : <span class="id" title="var">result</span>) <span class="id" title="var">Q</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">P</span> ===&gt; <span class="id" title="var">Q</span> <span class="id" title="var">v</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;-&gt; <span class="id" title="var">hoare_triple</span> <span class="id" title="var">P</span> (<span class="id" title="var">Return</span> <span class="id" title="var">v</span>) <span class="id" title="var">Q</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">check_type_of</span> <span class="id" title="var">desc</span> <span class="id" title="var">e</span> <span class="id" title="var">t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">t'</span> := <span class="id" title="keyword">type</span> <span class="id" title="keyword">of</span> <span class="id" title="var">e</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">tryif</span> <span class="id" title="var">unify</span> <span class="id" title="var">t'</span> <span class="id" title="var">t</span> <span class="id" title="keyword">then</span> <span class="id" title="tactic">idtac</span> <span class="id" title="keyword">else</span> <span class="id" title="tactic">fail</span> 0 <span class="id" title="var">desc</span> <span class="id" title="var">e</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"should have the type" <span class="id" title="var">t</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"but instead has the type" <span class="id" title="var">t'</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">check_loop_inv_args</span> <span class="id" title="var">pre</span> <span class="id" title="var">post</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">lazymatch</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| |- <span class="id" title="var">hoare_triple</span> <span class="id" title="var">_</span> (@<span class="id" title="var">Loop</span> ?<span class="id" title="var">acc</span> ?<span class="id" title="var">res</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span>) <span class="id" title="var">_</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">check_type_of</span> "loop precondition" <span class="id" title="var">pre</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">constr</span>:(<span class="id" title="keyword">forall</span> <span class="id" title="var">_</span> : <span class="id" title="var">acc</span>, <span class="id" title="var">assertion</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">check_type_of</span> "loop postcondition" <span class="id" title="var">post</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">constr</span>:(<span class="id" title="keyword">forall</span> (<span class="id" title="var">_</span> : <span class="id" title="var">acc</span>) (<span class="id" title="var">_</span> : <span class="id" title="var">res</span>), <span class="id" title="var">assertion</span>)<br/>
+&nbsp;&nbsp;| |- <span class="id" title="var">_</span> =&gt; <span class="id" title="tactic">fail</span> "This tactic expects a Hoare triple for a loop"<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">basic</span> := <span class="id" title="tactic">apply</span> <span class="id" title="var">HtReturn'</span> || <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtWrite</span> || <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtAlloc</span> || <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtFree</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">step0</span> := <span class="id" title="var">basic</span> || <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtBind</span> || (<span class="id" title="tactic">eapply</span> <span class="id" title="var">use_lemma</span>; [ <span class="id" title="var">basic</span> | <span class="id" title="var">cancel</span>; <span class="id" title="tactic">auto</span> ])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (<span class="id" title="tactic">eapply</span> <span class="id" title="var">use_lemma</span>; [ <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtRead'</span> | <span class="id" title="tactic">solve</span> [ <span class="id" title="var">cancel</span>; <span class="id" title="tactic">auto</span> ] ])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (<span class="id" title="tactic">eapply</span> <span class="id" title="var">HtRead''</span>; <span class="id" title="tactic">solve</span> [ <span class="id" title="var">cancel</span> ])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (<span class="id" title="tactic">eapply</span> <span class="id" title="var">HtStrengthen</span>; [ <span class="id" title="tactic">eapply</span> <span class="id" title="var">use_lemma</span>; [ <span class="id" title="var">basic</span> | <span class="id" title="var">cancel</span>; <span class="id" title="tactic">auto</span> ] | ])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (<span class="id" title="tactic">eapply</span> <span class="id" title="var">HtConsequence</span>; [ <span class="id" title="tactic">apply</span> <span class="id" title="var">HtFail</span> | .. ]).<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">step</span> := <span class="id" title="var">step0</span>; <span class="id" title="var">simp</span>.<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">ht</span> := <span class="id" title="var">simp</span>; <span class="id" title="tactic">repeat</span> <span class="id" title="var">step</span>.<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">conseq</span> := <span class="id" title="var">simplify</span>; <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtConsequence</span>.<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">use_IH</span> <span class="id" title="var">H</span> := <span class="id" title="var">conseq</span>; [ <span class="id" title="tactic">apply</span> <span class="id" title="var">H</span> | .. ]; <span class="id" title="var">ht</span>.<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">loop_inv0</span> <span class="id" title="var">P0</span> <span class="id" title="var">Q0</span> := <span class="id" title="tactic">eapply</span> <span class="id" title="var">HtConsequence</span>; [ <span class="id" title="tactic">apply</span> <span class="id" title="var">HtLoop</span> <span class="id" title="keyword">with</span> (<span class="id" title="var">P</span> := <span class="id" title="var">P0</span>) (<span class="id" title="var">Q</span> := <span class="id" title="var">Q0</span>) | .. ].<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">loop_inv</span> <span class="id" title="var">P0</span> <span class="id" title="var">Q0</span> := <span class="id" title="var">check_loop_inv_args</span> <span class="id" title="var">P0</span> <span class="id" title="var">Q0</span>; <span class="id" title="var">loop_inv0</span> <span class="id" title="var">P0</span> <span class="id" title="var">Q0</span>; <span class="id" title="var">ht</span>.<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">use</span> <span class="id" title="var">H</span> := (<span class="id" title="tactic">eapply</span> <span class="id" title="var">use_lemma</span>; [ <span class="id" title="tactic">eapply</span> <span class="id" title="var">H</span> | <span class="id" title="var">cancel</span>; <span class="id" title="tactic">auto</span> ])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| (<span class="id" title="tactic">eapply</span> <span class="id" title="var">HtStrengthen</span>; [ <span class="id" title="tactic">eapply</span> <span class="id" title="var">use_lemma</span>; [ <span class="id" title="tactic">eapply</span> <span class="id" title="var">H</span> | <span class="id" title="var">cancel</span>; <span class="id" title="tactic">auto</span> ] | ]).<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">heq</span> := <span class="id" title="tactic">intros</span>; <span class="id" title="tactic">apply</span> <span class="id" title="var">himp_heq</span>; <span class="id" title="tactic">split</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">star_emp_l</span> <span class="id" title="var">P</span> :<br/>
+&nbsp;&nbsp;<span class="id" title="var">emp</span> * <span class="id" title="var">P</span> === <span class="id" title="var">P</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">star_emp_r</span> <span class="id" title="var">P</span> :<br/>
+&nbsp;&nbsp;<span class="id" title="var">P</span> * <span class="id" title="var">emp</span> === <span class="id" title="var">P</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab5"></a><h1 class="section">Binary trees</h1>
+
+</div>
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">tree</span> :=<br/>
+| <span class="id" title="var">Leaf</span><br/>
+| <span class="id" title="var">Node</span> (<span class="id" title="var">l</span> : <span class="id" title="var">tree</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">r</span> : <span class="id" title="var">tree</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">mtree'</span> (<span class="id" title="var">t</span> : <span class="id" title="var">tree</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">t</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Leaf</span> =&gt; [| <span class="id" title="var">p</span> = 0 |]<br/>
+&nbsp;&nbsp;| <span class="id" title="var">Node</span> <span class="id" title="var">l</span> <span class="id" title="var">x</span> <span class="id" title="var">r</span> =&gt; [| <span class="id" title="var">p</span> &lt;&gt; 0 |]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="tactic">exists</span> <span class="id" title="var">p1</span> <span class="id" title="var">p2</span>, <span class="id" title="var">p</span> |--&gt; [<span class="id" title="var">p1</span>; <span class="id" title="var">x</span>; <span class="id" title="var">p2</span>]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="var">mtree'</span> <span class="id" title="var">l</span> <span class="id" title="var">p1</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* <span class="id" title="var">mtree'</span> <span class="id" title="var">r</span> <span class="id" title="var">p2</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">mtree</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="tactic">exists</span> <span class="id" title="var">t</span>, <span class="id" title="var">mtree'</span> <span class="id" title="var">t</span> <span class="id" title="var">p</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">mtreep</span> (<span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">hprop</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="tactic">exists</span> <span class="id" title="var">p'</span>, [| <span class="id" title="var">p</span> &lt;&gt; 0 |] * <span class="id" title="var">p</span> |-&gt; <span class="id" title="var">p'</span> * <span class="id" title="var">mtree</span> <span class="id" title="var">p'</span>)%<span class="id" title="var">sep</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">lookup</span> (<span class="id" title="var">x</span> <span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">t</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">p</span>; <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">for</span> <span class="id" title="var">a</span> := <span class="id" title="var">t</span> <span class="id" title="var">loop</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">a</span> ==<span class="id" title="var">n</span> 0 <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">a</span> + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">x</span> ==<span class="id" title="var">n</span> <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">true</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="keyword">if</span> <span class="id" title="var">x</span> &lt;=? <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">l</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">a</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">l</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">r</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">a</span> + 1 + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;<span class="id" title="var">done</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">insert</span> (<span class="id" title="var">x</span> <span class="id" title="var">p</span> : <span class="id" title="var">nat</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">for</span> <span class="id" title="var">a</span> := <span class="id" title="var">p</span> <span class="id" title="var">loop</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">q</span> &lt;- <span class="id" title="var">Read</span> <span class="id" title="var">a</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">q</span> ==<span class="id" title="var">n</span> 0 <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">node</span> &lt;- <span class="id" title="var">Alloc</span> 3;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">_</span> &lt;- <span class="id" title="var">Write</span> (<span class="id" title="var">node</span> + 1) <span class="id" title="var">x</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">_</span> &lt;- <span class="id" title="var">Write</span> <span class="id" title="var">a</span> <span class="id" title="var">node</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Done</span> <span class="id" title="var">tt</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y</span> &lt;- <span class="id" title="var">Read</span> (<span class="id" title="var">q</span> + 1);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">x</span> &lt;=? <span class="id" title="var">y</span> <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> <span class="id" title="var">q</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Return</span> (<span class="id" title="var">Again</span> (<span class="id" title="var">q</span> + 1 + 1))<br/>
+&nbsp;&nbsp;<span class="id" title="var">done</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="keyword">Type</span> <span class="id" title="var">S</span>.<br/>
+ <span class="id" title="keyword">Axiom</span> <span class="id" title="var">lookup_ok</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{{ <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">lookup</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{{ <span class="id" title="var">_</span> ~&gt; <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}.<br/>
+
+<br/>
+ <span class="id" title="keyword">Axiom</span> <span class="id" title="var">insert_ok</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{{ <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">insert</span> <span class="id" title="var">x</span> <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{{ <span class="id" title="var">_</span> ~&gt; <span class="id" title="var">mtreep</span> <span class="id" title="var">p</span> }}.<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">S</span>.<br/>
+
+<br/>
+</div>
+<table>
+<tr>
+<td>Global Index</td>
+<td><a href="index.html#global_A">A</a></td>
+<td><a href="index.html#global_B">B</a></td>
+<td><a href="index.html#global_C">C</a></td>
+<td><a href="index.html#global_D">D</a></td>
+<td><a href="index.html#global_E">E</a></td>
+<td><a href="index.html#global_F">F</a></td>
+<td>G</td>
+<td><a href="index.html#global_H">H</a></td>
+<td><a href="index.html#global_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#global_L">L</a></td>
+<td><a href="index.html#global_M">M</a></td>
+<td><a href="index.html#global_N">N</a></td>
+<td><a href="index.html#global_O">O</a></td>
+<td><a href="index.html#global_P">P</a></td>
+<td><a href="index.html#global_Q">Q</a></td>
+<td><a href="index.html#global_R">R</a></td>
+<td><a href="index.html#global_S">S</a></td>
+<td><a href="index.html#global_T">T</a></td>
+<td><a href="index.html#global_U">U</a></td>
+<td><a href="index.html#global_V">V</a></td>
+<td><a href="index.html#global_W">W</a></td>
+<td><a href="index.html#global_X">X</a></td>
+<td><a href="index.html#global_Y">Y</a></td>
+<td><a href="index.html#global_Z">Z</a></td>
+<td>_</td>
+<td><a href="index.html#global_*">other</a></td>
+<td>(358 entries)</td>
+</tr>
+<tr>
+<td>Notation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#notation_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td><a href="index.html#notation_*">other</a></td>
+<td>(17 entries)</td>
+</tr>
+<tr>
+<td>Binder Index</td>
+<td><a href="index.html#binder_A">A</a></td>
+<td><a href="index.html#binder_B">B</a></td>
+<td><a href="index.html#binder_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#binder_H">H</a></td>
+<td><a href="index.html#binder_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#binder_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#binder_N">N</a></td>
+<td><a href="index.html#binder_O">O</a></td>
+<td><a href="index.html#binder_P">P</a></td>
+<td><a href="index.html#binder_Q">Q</a></td>
+<td><a href="index.html#binder_R">R</a></td>
+<td>S</td>
+<td><a href="index.html#binder_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#binder_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#binder_X">X</a></td>
+<td><a href="index.html#binder_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(255 entries)</td>
+</tr>
+<tr>
+<td>Module Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#module_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(3 entries)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Axiom Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#axiom_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(2 entries)</td>
+</tr>
+<tr>
+<td>Constructor Index</td>
+<td><a href="index.html#constructor_A">A</a></td>
+<td><a href="index.html#constructor_B">B</a></td>
+<td>C</td>
+<td><a href="index.html#constructor_D">D</a></td>
+<td>E</td>
+<td><a href="index.html#constructor_F">F</a></td>
+<td>G</td>
+<td><a href="index.html#constructor_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#constructor_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#constructor_N">N</a></td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td><a href="index.html#constructor_R">R</a></td>
+<td><a href="index.html#constructor_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td><a href="index.html#constructor_W">W</a></td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(29 entries)</td>
+</tr>
+<tr>
+<td>Lemma Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#lemma_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#lemma_S">S</a></td>
+<td><a href="index.html#lemma_T">T</a></td>
+<td><a href="index.html#lemma_U">U</a></td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(23 entries)</td>
+</tr>
+<tr>
+<td>Inductive Index</td>
+<td>A</td>
+<td>B</td>
+<td><a href="index.html#inductive_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#inductive_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#inductive_L">L</a></td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#inductive_S">S</a></td>
+<td><a href="index.html#inductive_T">T</a></td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(5 entries)</td>
+</tr>
+<tr>
+<td>Instance Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#instance_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Abbreviation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td><a href="index.html#abbreviation_E">E</a></td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Definition Index</td>
+<td><a href="index.html#definition_A">A</a></td>
+<td>B</td>
+<td>C</td>
+<td><a href="index.html#definition_D">D</a></td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#definition_H">H</a></td>
+<td><a href="index.html#definition_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#definition_L">L</a></td>
+<td><a href="index.html#definition_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#definition_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#definition_S">S</a></td>
+<td><a href="index.html#definition_T">T</a></td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td><a href="index.html#definition_Z">Z</a></td>
+<td>_</td>
+<td>other</td>
+<td>(21 entries)</td>
+</tr>
+</table>
+<hr/>
+<h1>Global Index</h1>
+<a id="global_A"></a><h2>A </h2>
+<a href="Pset10.Pset10Sig.html#acc:1">acc:1</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:176">acc:176</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:18">acc:18</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:182">acc:182</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:53">acc:53</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Again">Again</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Alloc">Alloc</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#allocated">allocated</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#assertion">assertion</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:127">A:127</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:131">A:131</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:135">A:135</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:140">a:140</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:142">a:142</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:145">a:145</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:149">a:149</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:15">a:15</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:156">a:156</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:16">a:16</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:188">a:188</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:192">a:192</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:197">a:197</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:224">A:224</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:232">a:232</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:266">a:266</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:272">a:272</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:38">A:38</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:6">a:6</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:61">a:61</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:64">a:64</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:69">a:69</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:72">a:72</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:90">A:90</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:96">A:96</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_B"></a><h2>B </h2>
+<a href="Pset10.Pset10Sig.html#base:24">base:24</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#base:29">base:29</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#base:34">base:34</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Bind">Bind</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:179">body:179</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:21">body:21</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:56">body:56</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_C"></a><h2>C </h2>
+<a href="Pset10.Pset10Sig.html#cmd">cmd</a> [inductive, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1':44">c1':44</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:13">c1:13</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:171">c1:171</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:43">c1:43</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:14">c2:14</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:172">c2:172</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:45">c2:45</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:51">c2:51</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:200">c:200</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:207">c:207</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:214">c:214</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:220">c:220</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:227">c:227</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:76">c:76</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_D"></a><h2>D </h2>
+<a href="Pset10.Pset10Sig.html#deallocate">deallocate</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Done">Done</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_E"></a><h2>E </h2>
+<a href="Pset10.Pset10Sig.html#emp">emp</a> [abbreviation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_F"></a><h2>F </h2>
+<a href="Pset10.Pset10Sig.html#Fail">Fail</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Free">Free</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#heap">heap</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#heap1">heap1</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#hoare_triple_morphism">hoare_triple_morphism</a> [instance, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#hoare_triple">hoare_triple</a> [inductive, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtAlloc">HtAlloc</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtBind">HtBind</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtConsequence">HtConsequence</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFail">HtFail</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFrame">HtFrame</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFree">HtFree</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtLoop">HtLoop</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtRead">HtRead</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtRead'">HtRead'</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtRead''">HtRead''</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtReturn">HtReturn</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtReturn'">HtReturn'</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtStrengthen">HtStrengthen</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtWeaken">HtWeaken</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtWrite">HtWrite</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h':47">h':47</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h1:88">h1:88</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h2:89">h2:89</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:139">h:139</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:144">h:144</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:28">h:28</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:33">h:33</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:46">h:46</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:52">h:52</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:57">h:57</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:60">h:60</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:63">h:63</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:67">h:67</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:71">h:71</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:74">h:74</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:79">h:79</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:82">h:82</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:84">h:84</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:87">h:87</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:92">h:92</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_I"></a><h2>I </h2>
+<a href="Pset10.Pset10Sig.html#initialize">initialize</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#init:178">init:178</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#init:20">init:20</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#init:55">init:55</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#insert">insert</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#i:70">i:70</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_L"></a><h2>L </h2>
+<a href="Pset10.Pset10Sig.html#Leaf">Leaf</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#lookup">lookup</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Loop">Loop</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#loop_outcome">loop_outcome</a> [inductive, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#l:250">l:250</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#l:269">l:269</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_M"></a><h2>M </h2>
+<a href="Pset10.Pset10Sig.html#mtree">mtree</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#mtreep">mtreep</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#mtree'">mtree'</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#multi_ptsto">multi_ptsto</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_N"></a><h2>N </h2>
+<a href="Pset10.Pset10Sig.html#Node">Node</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#node:275">node:275</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:195">numWords:195</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:198">numWords:198</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:23">numWords:23</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:25">numWords:25</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:30">numWords:30</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:35">numWords:35</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:68">numWords:68</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:73">numWords:73</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#n:153">n:153</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#n:157">n:157</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_O"></a><h2>O </h2>
+<a href="Pset10.Pset10Sig.html#o:58">o:58</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_P"></a><h2>P </h2>
+<a href="Pset10Sig.html">Pset10Sig</a> [library]<br/>
+<a href="Pset10.Pset10Sig.html#ptsto">ptsto</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P':203">P':203</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P':223">P':223</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P':226">P':226</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p':262">p':262</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p1:123">p1:123</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p1:257">p1:257</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p2:124">p2:124</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p2:258">p2:258</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:104">p:104</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:106">p:106</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:107">p:107</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:110">p:110</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:113">p:113</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:116">P:116</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:117">p:117</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:118">p:118</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:120">p:120</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:128">p:128</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:132">p:132</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:136">p:136</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:164">P:164</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:168">P:168</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:180">P:180</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:201">P:201</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:208">P:208</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:215">P:215</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:221">P:221</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:229">P:229</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:237">p:237</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:238">P:238</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:242">P:242</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:246">P:246</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:247">P:247</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:254">p:254</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:259">p:259</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:261">p:261</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:264">p:264</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:271">p:271</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:277">p:277</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:280">p:280</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:77">p:77</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:80">p:80</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:83">P:83</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:85">p:85</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:91">p:91</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:97">P:97</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_Q"></a><h2>Q </h2>
+<a href="Pset10.Pset10Sig.html#Q':204">Q':204</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q':217">Q':217</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q1:125">q1:125</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q2:126">q2:126</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:105">q:105</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:108">q:108</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:111">Q:111</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:114">q:114</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:119">q:119</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:121">q:121</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:129">q:129</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:133">q:133</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:137">q:137</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:173">Q:173</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:181">Q:181</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:202">Q:202</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:209">Q:209</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:216">Q:216</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:222">Q:222</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:228">Q:228</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:245">Q:245</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:273">q:273</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:78">q:78</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:81">q:81</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:86">q:86</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:98">Q:98</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_R"></a><h2>R </h2>
+<a href="Pset10.Pset10Sig.html#Read">Read</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':12">result':12</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':169">result':169</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':42">result':42</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':49">result':49</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:11">result:11</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:161">result:161</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:165">result:165</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:170">result:170</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:187">result:187</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:199">result:199</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:206">result:206</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:213">result:213</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:219">result:219</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:22">result:22</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:225">result:225</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:243">result:243</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:41">result:41</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:48">result:48</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:75">result:75</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:9">result:9</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:177">res:177</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:19">res:19</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:2">res:2</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:54">res:54</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Return">Return</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:10">r:10</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:109">r:109</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:112">r:112</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:115">R:115</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:122">r:122</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:167">r:167</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:174">R:174</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:175">r:175</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:183">r:183</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:185">R:185</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:186">r:186</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:189">R:189</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:190">r:190</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:196">r:196</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:205">r:205</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:210">R:210</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:211">r:211</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:212">r:212</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:218">r:218</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:230">R:230</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:231">r:231</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:234">r:234</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:235">r:235</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:236">r:236</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:239">R:239</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:241">r:241</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:252">r:252</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:268">r:268</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:5">r:5</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#S">S</a> [module, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Se">Se</a> [module, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep">Sep</a> [module, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.emp_heap">Sep.emp_heap</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis">Sep.exis</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_right">Sep.exis_right</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_left">Sep.exis_left</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_gulp">Sep.exis_gulp</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.extra_lift">Sep.extra_lift</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.heq">Sep.heq</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp">Sep.himp</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_trans">Sep.himp_trans</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_refl">Sep.himp_refl</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_heq">Sep.himp_heq</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.hprop">Sep.hprop</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.iff_two">Sep.iff_two</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift">Sep.lift</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift_right">Sep.lift_right</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift_left">Sep.lift_left</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star">Sep.star</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_cancel">Sep.star_cancel</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_assoc">Sep.star_assoc</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_comm">Sep.star_comm</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#09bdf2bed858f94642a0eb613300c826">exists _ .. _ , _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#d4589448019d032402a139a2e4e737a2">_ * _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#50700add651e878719e1526f7be3791b">[| _ |] (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#5ee53df25dda0557772f392140dbe35b">_ ===&gt; _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#cb4b39241a9fce79f918fc3d46ab65ce">_ === _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#star_emp_r">star_emp_r</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#star_emp_l">star_emp_l</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#step">step</a> [inductive, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepAlloc">StepAlloc</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepBindProceed">StepBindProceed</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepBindRecur">StepBindRecur</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepFree">StepFree</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepLoop">StepLoop</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepRead">StepRead</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepWrite">StepWrite</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#S.insert_ok">S.insert_ok</a> [axiom, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#S.lookup_ok">S.lookup_ok</a> [axiom, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_T"></a><h2>T </h2>
+<a href="Pset10.Pset10Sig.html#tree">tree</a> [inductive, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#trsys_of">trsys_of</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#try_ptsto_first">try_ptsto_first</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#t:253">t:253</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#t:260">t:260</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#t:265">t:265</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_U"></a><h2>U </h2>
+<a href="Pset10.Pset10Sig.html#use_lemma">use_lemma</a> [lemma, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_V"></a><h2>V </h2>
+<a href="Pset10.Pset10Sig.html#vs:150">vs:150</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v':194">v':194</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v':66">v':66</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:141">v:141</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:143">v:143</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:146">v:146</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:160">v:160</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:166">v:166</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:17">v:17</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:191">v:191</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:193">v:193</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:233">v:233</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:240">v:240</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:244">v:244</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:50">v:50</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:62">v:62</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:65">v:65</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_W"></a><h2>W </h2>
+<a href="Pset10.Pset10Sig.html#Write">Write</a> [constructor, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_X"></a><h2>X </h2>
+<a href="Pset10.Pset10Sig.html#x:100">x:100</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:101">x:101</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:102">x:102</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:103">x:103</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:130">x:130</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:134">x:134</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:138">x:138</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:147">x:147</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:251">x:251</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:26">x:26</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:263">x:263</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:27">x:27</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:270">x:270</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:276">x:276</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:279">x:279</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:93">x:93</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:94">x:94</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:99">x:99</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_Y"></a><h2>Y </h2>
+<a href="Pset10.Pset10Sig.html#y:148">y:148</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:267">y:267</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:274">y:274</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:95">y:95</a> [binder, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_Z"></a><h2>Z </h2>
+<a href="Pset10.Pset10Sig.html#zeroes">zeroes</a> [definition, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="global_*"></a><h2>other </h2>
+<a href="Pset10.Pset10Sig.html#4af31f65a4c405871f12868ff03673ee">_ |-&gt;? _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#3ab9047a0d2ab02207b149f0ed829cf8">_ |--&gt; _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#8ccd74f131a8ebf774bec5afcfae704e">_ |-&gt; _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#ea268648a4bfa7c389b6981d3089518e">exists _ .. _ , _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#469b3fc8fea86a52e23e68bee0cac6ba">_ * _ (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#485ab7fee5990ef29bedf9e2cddeb8a5">[| _ |] (sep_scope)</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#28f43c6c1c00c11599fc86b7e27012f9">_ ===&gt; _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#e4fcc283144c45c2c55c8add25c7e04d">_ === _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#b23fc44edcd48986a532f95bb55a35cf">_ &lt;- _ ; _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#11c17673171340187a7a559f3d66de43">_ $! _</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#0dd63771ba917101253e5a323c138f48">for _ := _ loop _ done</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#9495971a2d0ee8f6f60fb710782e4095">{{ _ }} _ {{ _ ~&gt; _ }}</a> [notation, in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Notation Index</h1>
+<a id="notation_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#09bdf2bed858f94642a0eb613300c826">exists _ .. _ , _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#d4589448019d032402a139a2e4e737a2">_ * _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#50700add651e878719e1526f7be3791b">[| _ |] (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#5ee53df25dda0557772f392140dbe35b">_ ===&gt; _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#cb4b39241a9fce79f918fc3d46ab65ce">_ === _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="notation_*"></a><h2>other </h2>
+<a href="Pset10.Pset10Sig.html#4af31f65a4c405871f12868ff03673ee">_ |-&gt;? _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#3ab9047a0d2ab02207b149f0ed829cf8">_ |--&gt; _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#8ccd74f131a8ebf774bec5afcfae704e">_ |-&gt; _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#ea268648a4bfa7c389b6981d3089518e">exists _ .. _ , _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#469b3fc8fea86a52e23e68bee0cac6ba">_ * _ (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#485ab7fee5990ef29bedf9e2cddeb8a5">[| _ |] (sep_scope)</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#28f43c6c1c00c11599fc86b7e27012f9">_ ===&gt; _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#e4fcc283144c45c2c55c8add25c7e04d">_ === _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#b23fc44edcd48986a532f95bb55a35cf">_ &lt;- _ ; _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#11c17673171340187a7a559f3d66de43">_ $! _</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#0dd63771ba917101253e5a323c138f48">for _ := _ loop _ done</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#9495971a2d0ee8f6f60fb710782e4095">{{ _ }} _ {{ _ ~&gt; _ }}</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Binder Index</h1>
+<a id="binder_A"></a><h2>A </h2>
+<a href="Pset10.Pset10Sig.html#acc:1">acc:1</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:176">acc:176</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:18">acc:18</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:182">acc:182</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#acc:53">acc:53</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:127">A:127</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:131">A:131</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:135">A:135</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:140">a:140</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:142">a:142</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:145">a:145</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:149">a:149</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:15">a:15</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:156">a:156</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:16">a:16</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:188">a:188</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:192">a:192</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:197">a:197</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:224">A:224</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:232">a:232</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:266">a:266</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:272">a:272</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:38">A:38</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:6">a:6</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:61">a:61</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:64">a:64</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:69">a:69</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#a:72">a:72</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:90">A:90</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#A:96">A:96</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_B"></a><h2>B </h2>
+<a href="Pset10.Pset10Sig.html#base:24">base:24</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#base:29">base:29</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#base:34">base:34</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:179">body:179</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:21">body:21</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#body:56">body:56</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_C"></a><h2>C </h2>
+<a href="Pset10.Pset10Sig.html#c1':44">c1':44</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:13">c1:13</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:171">c1:171</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c1:43">c1:43</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:14">c2:14</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:172">c2:172</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:45">c2:45</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c2:51">c2:51</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:200">c:200</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:207">c:207</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:214">c:214</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:220">c:220</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:227">c:227</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#c:76">c:76</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#h':47">h':47</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h1:88">h1:88</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h2:89">h2:89</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:139">h:139</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:144">h:144</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:28">h:28</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:33">h:33</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:46">h:46</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:52">h:52</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:57">h:57</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:60">h:60</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:63">h:63</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:67">h:67</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:71">h:71</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:74">h:74</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:79">h:79</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:82">h:82</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:84">h:84</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:87">h:87</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#h:92">h:92</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_I"></a><h2>I </h2>
+<a href="Pset10.Pset10Sig.html#init:178">init:178</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#init:20">init:20</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#init:55">init:55</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#i:70">i:70</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_L"></a><h2>L </h2>
+<a href="Pset10.Pset10Sig.html#l:250">l:250</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#l:269">l:269</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_N"></a><h2>N </h2>
+<a href="Pset10.Pset10Sig.html#node:275">node:275</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:195">numWords:195</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:198">numWords:198</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:23">numWords:23</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:25">numWords:25</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:30">numWords:30</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:35">numWords:35</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:68">numWords:68</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#numWords:73">numWords:73</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#n:153">n:153</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#n:157">n:157</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_O"></a><h2>O </h2>
+<a href="Pset10.Pset10Sig.html#o:58">o:58</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_P"></a><h2>P </h2>
+<a href="Pset10.Pset10Sig.html#P':203">P':203</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P':223">P':223</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P':226">P':226</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p':262">p':262</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p1:123">p1:123</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p1:257">p1:257</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p2:124">p2:124</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p2:258">p2:258</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:104">p:104</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:106">p:106</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:107">p:107</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:110">p:110</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:113">p:113</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:116">P:116</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:117">p:117</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:118">p:118</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:120">p:120</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:128">p:128</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:132">p:132</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:136">p:136</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:164">P:164</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:168">P:168</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:180">P:180</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:201">P:201</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:208">P:208</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:215">P:215</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:221">P:221</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:229">P:229</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:237">p:237</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:238">P:238</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:242">P:242</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:246">P:246</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:247">P:247</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:254">p:254</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:259">p:259</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:261">p:261</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:264">p:264</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:271">p:271</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:277">p:277</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:280">p:280</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:77">p:77</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:80">p:80</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:83">P:83</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:85">p:85</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#p:91">p:91</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#P:97">P:97</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_Q"></a><h2>Q </h2>
+<a href="Pset10.Pset10Sig.html#Q':204">Q':204</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q':217">Q':217</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q1:125">q1:125</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q2:126">q2:126</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:105">q:105</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:108">q:108</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:111">Q:111</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:114">q:114</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:119">q:119</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:121">q:121</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:129">q:129</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:133">q:133</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:137">q:137</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:173">Q:173</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:181">Q:181</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:202">Q:202</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:209">Q:209</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:216">Q:216</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:222">Q:222</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:228">Q:228</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:245">Q:245</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:273">q:273</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:78">q:78</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:81">q:81</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#q:86">q:86</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Q:98">Q:98</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_R"></a><h2>R </h2>
+<a href="Pset10.Pset10Sig.html#result':12">result':12</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':169">result':169</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':42">result':42</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result':49">result':49</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:11">result:11</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:161">result:161</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:165">result:165</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:170">result:170</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:187">result:187</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:199">result:199</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:206">result:206</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:213">result:213</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:219">result:219</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:22">result:22</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:225">result:225</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:243">result:243</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:41">result:41</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:48">result:48</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:75">result:75</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#result:9">result:9</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:177">res:177</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:19">res:19</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:2">res:2</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#res:54">res:54</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:10">r:10</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:109">r:109</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:112">r:112</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:115">R:115</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:122">r:122</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:167">r:167</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:174">R:174</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:175">r:175</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:183">r:183</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:185">R:185</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:186">r:186</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:189">R:189</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:190">r:190</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:196">r:196</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:205">r:205</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:210">R:210</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:211">r:211</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:212">r:212</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:218">r:218</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:230">R:230</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:231">r:231</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:234">r:234</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:235">r:235</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:236">r:236</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#R:239">R:239</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:241">r:241</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:252">r:252</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:268">r:268</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#r:5">r:5</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_T"></a><h2>T </h2>
+<a href="Pset10.Pset10Sig.html#t:253">t:253</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#t:260">t:260</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#t:265">t:265</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_V"></a><h2>V </h2>
+<a href="Pset10.Pset10Sig.html#vs:150">vs:150</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v':194">v':194</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v':66">v':66</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:141">v:141</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:143">v:143</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:146">v:146</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:160">v:160</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:166">v:166</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:17">v:17</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:191">v:191</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:193">v:193</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:233">v:233</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:240">v:240</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:244">v:244</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:50">v:50</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:62">v:62</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#v:65">v:65</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_X"></a><h2>X </h2>
+<a href="Pset10.Pset10Sig.html#x:100">x:100</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:101">x:101</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:102">x:102</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:103">x:103</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:130">x:130</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:134">x:134</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:138">x:138</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:147">x:147</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:251">x:251</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:26">x:26</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:263">x:263</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:27">x:27</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:270">x:270</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:276">x:276</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:279">x:279</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:93">x:93</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:94">x:94</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#x:99">x:99</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="binder_Y"></a><h2>Y </h2>
+<a href="Pset10.Pset10Sig.html#y:148">y:148</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:267">y:267</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:274">y:274</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#y:95">y:95</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Module Index</h1>
+<a id="module_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#S">S</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Se">Se</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep">Sep</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Library Index</h1>
+<a id="library_P"></a><h2>P </h2>
+<a href="Pset10Sig.html">Pset10Sig</a> <br/>
+<br/><br/><hr/>
+<h1>Axiom Index</h1>
+<a id="axiom_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#S.insert_ok">S.insert_ok</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#S.lookup_ok">S.lookup_ok</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Constructor Index</h1>
+<a id="constructor_A"></a><h2>A </h2>
+<a href="Pset10.Pset10Sig.html#Again">Again</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Alloc">Alloc</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_B"></a><h2>B </h2>
+<a href="Pset10.Pset10Sig.html#Bind">Bind</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_D"></a><h2>D </h2>
+<a href="Pset10.Pset10Sig.html#Done">Done</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_F"></a><h2>F </h2>
+<a href="Pset10.Pset10Sig.html#Fail">Fail</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Free">Free</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#HtAlloc">HtAlloc</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtBind">HtBind</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtConsequence">HtConsequence</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFail">HtFail</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFrame">HtFrame</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtFree">HtFree</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtLoop">HtLoop</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtRead">HtRead</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtReturn">HtReturn</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtWrite">HtWrite</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_L"></a><h2>L </h2>
+<a href="Pset10.Pset10Sig.html#Leaf">Leaf</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Loop">Loop</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_N"></a><h2>N </h2>
+<a href="Pset10.Pset10Sig.html#Node">Node</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_R"></a><h2>R </h2>
+<a href="Pset10.Pset10Sig.html#Read">Read</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Return">Return</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#StepAlloc">StepAlloc</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepBindProceed">StepBindProceed</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepBindRecur">StepBindRecur</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepFree">StepFree</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepLoop">StepLoop</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepRead">StepRead</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#StepWrite">StepWrite</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="constructor_W"></a><h2>W </h2>
+<a href="Pset10.Pset10Sig.html#Write">Write</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Lemma Index</h1>
+<a id="lemma_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#HtRead'">HtRead'</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtRead''">HtRead''</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtReturn'">HtReturn'</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtStrengthen">HtStrengthen</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#HtWeaken">HtWeaken</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="lemma_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#Sep.emp_heap">Sep.emp_heap</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_right">Sep.exis_right</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_left">Sep.exis_left</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.exis_gulp">Sep.exis_gulp</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.extra_lift">Sep.extra_lift</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_trans">Sep.himp_trans</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_refl">Sep.himp_refl</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp_heq">Sep.himp_heq</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.iff_two">Sep.iff_two</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift_right">Sep.lift_right</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift_left">Sep.lift_left</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_cancel">Sep.star_cancel</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_assoc">Sep.star_assoc</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star_comm">Sep.star_comm</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#star_emp_r">star_emp_r</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#star_emp_l">star_emp_l</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="lemma_T"></a><h2>T </h2>
+<a href="Pset10.Pset10Sig.html#try_ptsto_first">try_ptsto_first</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="lemma_U"></a><h2>U </h2>
+<a href="Pset10.Pset10Sig.html#use_lemma">use_lemma</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Inductive Index</h1>
+<a id="inductive_C"></a><h2>C </h2>
+<a href="Pset10.Pset10Sig.html#cmd">cmd</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="inductive_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#hoare_triple">hoare_triple</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="inductive_L"></a><h2>L </h2>
+<a href="Pset10.Pset10Sig.html#loop_outcome">loop_outcome</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="inductive_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#step">step</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="inductive_T"></a><h2>T </h2>
+<a href="Pset10.Pset10Sig.html#tree">tree</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Instance Index</h1>
+<a id="instance_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#hoare_triple_morphism">hoare_triple_morphism</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Abbreviation Index</h1>
+<a id="abbreviation_E"></a><h2>E </h2>
+<a href="Pset10.Pset10Sig.html#emp">emp</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/>
+<h1>Definition Index</h1>
+<a id="definition_A"></a><h2>A </h2>
+<a href="Pset10.Pset10Sig.html#allocated">allocated</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#assertion">assertion</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_D"></a><h2>D </h2>
+<a href="Pset10.Pset10Sig.html#deallocate">deallocate</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_H"></a><h2>H </h2>
+<a href="Pset10.Pset10Sig.html#heap">heap</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#heap1">heap1</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_I"></a><h2>I </h2>
+<a href="Pset10.Pset10Sig.html#initialize">initialize</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#insert">insert</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_L"></a><h2>L </h2>
+<a href="Pset10.Pset10Sig.html#lookup">lookup</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_M"></a><h2>M </h2>
+<a href="Pset10.Pset10Sig.html#mtree">mtree</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#mtreep">mtreep</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#mtree'">mtree'</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#multi_ptsto">multi_ptsto</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_P"></a><h2>P </h2>
+<a href="Pset10.Pset10Sig.html#ptsto">ptsto</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_S"></a><h2>S </h2>
+<a href="Pset10.Pset10Sig.html#Sep.exis">Sep.exis</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.heq">Sep.heq</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.himp">Sep.himp</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.hprop">Sep.hprop</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.lift">Sep.lift</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<a href="Pset10.Pset10Sig.html#Sep.star">Sep.star</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_T"></a><h2>T </h2>
+<a href="Pset10.Pset10Sig.html#trsys_of">trsys_of</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><a id="definition_Z"></a><h2>Z </h2>
+<a href="Pset10.Pset10Sig.html#zeroes">zeroes</a> [in <a href="Pset10.Pset10Sig.html">Pset10.Pset10Sig</a>]<br/>
+<br/><br/><hr/><table>
+<tr>
+<td>Global Index</td>
+<td><a href="index.html#global_A">A</a></td>
+<td><a href="index.html#global_B">B</a></td>
+<td><a href="index.html#global_C">C</a></td>
+<td><a href="index.html#global_D">D</a></td>
+<td><a href="index.html#global_E">E</a></td>
+<td><a href="index.html#global_F">F</a></td>
+<td>G</td>
+<td><a href="index.html#global_H">H</a></td>
+<td><a href="index.html#global_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#global_L">L</a></td>
+<td><a href="index.html#global_M">M</a></td>
+<td><a href="index.html#global_N">N</a></td>
+<td><a href="index.html#global_O">O</a></td>
+<td><a href="index.html#global_P">P</a></td>
+<td><a href="index.html#global_Q">Q</a></td>
+<td><a href="index.html#global_R">R</a></td>
+<td><a href="index.html#global_S">S</a></td>
+<td><a href="index.html#global_T">T</a></td>
+<td><a href="index.html#global_U">U</a></td>
+<td><a href="index.html#global_V">V</a></td>
+<td><a href="index.html#global_W">W</a></td>
+<td><a href="index.html#global_X">X</a></td>
+<td><a href="index.html#global_Y">Y</a></td>
+<td><a href="index.html#global_Z">Z</a></td>
+<td>_</td>
+<td><a href="index.html#global_*">other</a></td>
+<td>(358 entries)</td>
+</tr>
+<tr>
+<td>Notation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#notation_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td><a href="index.html#notation_*">other</a></td>
+<td>(17 entries)</td>
+</tr>
+<tr>
+<td>Binder Index</td>
+<td><a href="index.html#binder_A">A</a></td>
+<td><a href="index.html#binder_B">B</a></td>
+<td><a href="index.html#binder_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#binder_H">H</a></td>
+<td><a href="index.html#binder_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#binder_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#binder_N">N</a></td>
+<td><a href="index.html#binder_O">O</a></td>
+<td><a href="index.html#binder_P">P</a></td>
+<td><a href="index.html#binder_Q">Q</a></td>
+<td><a href="index.html#binder_R">R</a></td>
+<td>S</td>
+<td><a href="index.html#binder_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#binder_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#binder_X">X</a></td>
+<td><a href="index.html#binder_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(255 entries)</td>
+</tr>
+<tr>
+<td>Module Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#module_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(3 entries)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Axiom Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#axiom_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(2 entries)</td>
+</tr>
+<tr>
+<td>Constructor Index</td>
+<td><a href="index.html#constructor_A">A</a></td>
+<td><a href="index.html#constructor_B">B</a></td>
+<td>C</td>
+<td><a href="index.html#constructor_D">D</a></td>
+<td>E</td>
+<td><a href="index.html#constructor_F">F</a></td>
+<td>G</td>
+<td><a href="index.html#constructor_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#constructor_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#constructor_N">N</a></td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td><a href="index.html#constructor_R">R</a></td>
+<td><a href="index.html#constructor_S">S</a></td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td><a href="index.html#constructor_W">W</a></td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(29 entries)</td>
+</tr>
+<tr>
+<td>Lemma Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#lemma_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#lemma_S">S</a></td>
+<td><a href="index.html#lemma_T">T</a></td>
+<td><a href="index.html#lemma_U">U</a></td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(23 entries)</td>
+</tr>
+<tr>
+<td>Inductive Index</td>
+<td>A</td>
+<td>B</td>
+<td><a href="index.html#inductive_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#inductive_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#inductive_L">L</a></td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#inductive_S">S</a></td>
+<td><a href="index.html#inductive_T">T</a></td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(5 entries)</td>
+</tr>
+<tr>
+<td>Instance Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#instance_H">H</a></td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Abbreviation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td><a href="index.html#abbreviation_E">E</a></td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Definition Index</td>
+<td><a href="index.html#definition_A">A</a></td>
+<td>B</td>
+<td>C</td>
+<td><a href="index.html#definition_D">D</a></td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td><a href="index.html#definition_H">H</a></td>
+<td><a href="index.html#definition_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#definition_L">L</a></td>
+<td><a href="index.html#definition_M">M</a></td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#definition_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#definition_S">S</a></td>
+<td><a href="index.html#definition_T">T</a></td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td><a href="index.html#definition_Z">Z</a></td>
+<td>_</td>
+<td>other</td>
+<td>(21 entries)</td>
+</tr>
+</table>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

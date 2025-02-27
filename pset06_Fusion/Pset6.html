@@ -1,0 +1,1908 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title></title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Pset6</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a id="lab1"></a><h1 class="section">6.512 Formal Reasoning About Programs, Spring 2023 - Pset 6</h1>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Frap.Frap</span> <span class="id" title="var">Pset6.Pset6Sig</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">Swap</span>.<br/>
+
+<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">stack_val</span> :=<br/>
+| <span class="id" title="var">val_lit</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>)<br/>
+| <span class="id" title="var">val_nil</span><br/>
+| <span class="id" title="var">val_cons</span> (<span class="id" title="var">v1</span> <span class="id" title="var">v2</span> : <span class="id" title="var">stack_val</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">ty</span> : <span class="id" title="keyword">Set</span> :=<br/>
+| <span class="id" title="var">ty_nat</span><br/>
+| <span class="id" title="var">ty_list</span> (<span class="id" title="var">t</span> : <span class="id" title="var">ty</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">val_well_typed</span> : <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">ty</span> -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+| <span class="id" title="var">val_lit_wt</span> <span class="id" title="var">n</span> : <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">val_lit</span> <span class="id" title="var">n</span>) <span class="id" title="var">ty_nat</span><br/>
+| <span class="id" title="var">val_nil_wt</span> <span class="id" title="var">t</span> : <span class="id" title="var">val_well_typed</span> <span class="id" title="var">val_nil</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>)<br/>
+| <span class="id" title="var">val_cons_wt</span> <span class="id" title="var">t</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">val_well_typed</span> <span class="id" title="var">v1</span> <span class="id" title="var">t</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">v2</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">val_cons</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>) (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>).<br/>
+<span class="id" title="keyword">Local Hint Constructors</span> <span class="id" title="var">val_well_typed</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Print</span> <span class="id" title="var">Forall2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <span class="id" title="var">stack_well_typed</span> := (<span class="id" title="var">Forall2</span> <span class="id" title="var">val_well_typed</span>).<br/>
+<span class="id" title="keyword">Local Hint Constructors</span> <span class="id" title="var">Forall2</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">stack_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">s</span> : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">s</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">a</span>::<span class="id" title="var">s'</span> =&gt; (<span class="id" title="var">f</span> <span class="id" title="var">a</span>)::<span class="id" title="var">s'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> =&gt;  <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">stack_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">s</span> : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">s</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">a</span>::<span class="id" title="var">b</span>::<span class="id" title="var">s'</span> =&gt; (<span class="id" title="var">f</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span>)::<span class="id" title="var">s'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> =&gt;  <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">stack_pop</span> (<span class="id" title="var">s</span> : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">s</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">a</span>::<span class="id" title="var">s</span> =&gt; (<span class="id" title="var">a</span>,<span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> =&gt;  (<span class="id" title="var">val_lit</span> 0, [])<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">stack_peek</span> (<span class="id" title="var">s</span> : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">s</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">a</span>::<span class="id" title="var">_</span> =&gt; <span class="id" title="var">a</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> =&gt;  <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">val_app</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">v1</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_nil</span> =&gt; <span class="id" title="var">v2</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_cons</span> <span class="id" title="var">v11</span> <span class="id" title="var">v12</span> =&gt; <span class="id" title="var">val_cons</span> <span class="id" title="var">v11</span> (<span class="id" title="var">val_app</span> <span class="id" title="var">v12</span> <span class="id" title="var">v2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_lit</span> <span class="id" title="var">_</span> =&gt;  <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">val_flatmap</span> (<span class="id" title="var">f</span> : <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span>) <span class="id" title="var">v</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">v</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_nil</span> =&gt; <span class="id" title="var">val_nil</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_cons</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_app</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span>) (<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">v2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_lit</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">val_reduce</span> (<span class="id" title="var">f</span> : <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span>) <span class="id" title="var">vl</span> <span class="id" title="var">vacc</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">vl</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_nil</span> =&gt; <span class="id" title="var">vacc</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_cons</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_reduce</span> <span class="id" title="var">f</span> <span class="id" title="var">v2</span> (<span class="id" title="var">f</span> <span class="id" title="var">vacc</span> <span class="id" title="var">v1</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_lit</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">val_app_sound</span> <span class="id" title="var">t</span> <span class="id" title="var">l1</span> <span class="id" title="var">l2</span> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l1</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l2</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">val_app</span> <span class="id" title="var">l1</span> <span class="id" title="var">l2</span>) (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">val_flatmap_sound</span> <span class="id" title="var">t1</span> <span class="id" title="var">t2</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span><br/>
+&nbsp;&nbsp;: (<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">t1</span> -&gt; <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">f</span> <span class="id" title="var">x</span>) (<span class="id" title="var">ty_list</span> <span class="id" title="var">t2</span>)) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t1</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span>) (<span class="id" title="var">ty_list</span> <span class="id" title="var">t2</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">val_reduce_sound</span> <span class="id" title="var">t</span> <span class="id" title="var">tacc</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span> <span class="id" title="var">vacc</span> :<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">tacc</span> -&gt; <span class="id" title="var">val_well_typed</span> <span class="id" title="var">y</span> <span class="id" title="var">t</span> -&gt; <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">f</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>) <span class="id" title="var">tacc</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">vacc</span> <span class="id" title="var">tacc</span> -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">val_reduce</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span> <span class="id" title="var">vacc</span>) <span class="id" title="var">tacc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">stack_peek_sound</span> <span class="id" title="var">t</span> <span class="id" title="var">S</span> <span class="id" title="var">s</span> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> (<span class="id" title="var">t</span> :: <span class="id" title="var">S</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">stack_peek</span> <span class="id" title="var">s</span>) <span class="id" title="var">t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">val_flatmap_same</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span> <span class="id" title="var">t</span>:<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">t</span> -&gt; <span class="id" title="var">f</span> <span class="id" title="var">x</span> = <span class="id" title="var">g</span> <span class="id" title="var">x</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span> = <span class="id" title="var">val_flatmap</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">val_reduce_same</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span> <span class="id" title="var">vacc</span> <span class="id" title="var">tacc</span> <span class="id" title="var">t</span>:<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">tacc</span> -&gt; <span class="id" title="var">val_well_typed</span> <span class="id" title="var">y</span> <span class="id" title="var">t</span> -&gt; <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">f</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>) <span class="id" title="var">tacc</span>) -&gt;<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">tacc</span> -&gt; <span class="id" title="var">val_well_typed</span> <span class="id" title="var">y</span> <span class="id" title="var">t</span> -&gt; <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">g</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>) <span class="id" title="var">tacc</span>) -&gt;<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">x</span> <span class="id" title="var">tacc</span> -&gt; <span class="id" title="var">val_well_typed</span> <span class="id" title="var">y</span> <span class="id" title="var">t</span> -&gt; <span class="id" title="var">f</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span> = <span class="id" title="var">g</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">l</span> (<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">vacc</span> <span class="id" title="var">tacc</span> -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_reduce</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span> <span class="id" title="var">vacc</span> = <span class="id" title="var">val_reduce</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span> <span class="id" title="var">vacc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">stack_cmd</span> :=<br/>
+| <span class="id" title="var">cmd_atom</span> (<span class="id" title="var">v</span> : <span class="id" title="var">stack_val</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_unop</span> (<span class="id" title="var">f</span> : <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_binop</span> (<span class="id" title="var">f</span> : <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span> -&gt; <span class="id" title="var">stack_val</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_swap</span> (<span class="id" title="var">n1</span> <span class="id" title="var">n2</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cf</span> : <span class="id" title="var">stack_cmd</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_reduce</span> (<span class="id" title="var">cf</span> : <span class="id" title="var">stack_cmd</span>) (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>)<br/>
+| <span class="id" title="var">cmd_skip</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">cmd_well_typed</span> : <span class="id" title="var">list</span> <span class="id" title="var">ty</span> -&gt; <span class="id" title="var">stack_cmd</span> -&gt; <span class="id" title="var">list</span> <span class="id" title="var">ty</span> -&gt; <span class="id" title="keyword">Prop</span> :=<br/>
+| <span class="id" title="var">cmd_atom_wt</span> <span class="id" title="var">v</span> <span class="id" title="var">t</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">val_well_typed</span> <span class="id" title="var">v</span> <span class="id" title="var">t</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t</span>::<span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_unop_wt</span> <span class="id" title="var">f</span> <span class="id" title="var">t1</span> <span class="id" title="var">t2</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: (<span class="id" title="keyword">forall</span> <span class="id" title="var">v</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">v</span> <span class="id" title="var">t1</span> -&gt; <span class="id" title="var">val_well_typed</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>) <span class="id" title="var">t2</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t2</span>::<span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t1</span>::<span class="id" title="var">S</span>) (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_binop_wt</span> <span class="id" title="var">f</span> <span class="id" title="var">t1</span> <span class="id" title="var">t2</span> <span class="id" title="var">t3</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: (<span class="id" title="keyword">forall</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>, <span class="id" title="var">val_well_typed</span> <span class="id" title="var">v1</span> <span class="id" title="var">t1</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> <span class="id" title="var">v2</span> <span class="id" title="var">t2</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_well_typed</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>) <span class="id" title="var">t3</span>) -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t3</span>::<span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t1</span>::<span class="id" title="var">t2</span>::<span class="id" title="var">S</span>) (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_swap_wt</span> <span class="id" title="var">S</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">n1</span> &lt; <span class="id" title="var">n2</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">n2</span> &lt; <span class="id" title="var">length</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_flatmap_wt</span> <span class="id" title="var">S</span> (<span class="id" title="var">cf</span> : <span class="id" title="var">stack_cmd</span>) <span class="id" title="var">t1</span> <span class="id" title="var">t2</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> ((<span class="id" title="var">ty_list</span> <span class="id" title="var">t2</span>)::<span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> [<span class="id" title="var">t1</span>] <span class="id" title="var">cf</span> [<span class="id" title="var">ty_list</span> <span class="id" title="var">t2</span>] -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> ((<span class="id" title="var">ty_list</span> <span class="id" title="var">t1</span>)::<span class="id" title="var">S</span>) (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_reduce_wt</span> <span class="id" title="var">S</span> (<span class="id" title="var">cf</span> : <span class="id" title="var">stack_cmd</span>) <span class="id" title="var">t</span> <span class="id" title="var">t_acc</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> (<span class="id" title="var">t_acc</span>::<span class="id" title="var">S</span>) <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> [<span class="id" title="var">t</span>; <span class="id" title="var">t_acc</span>] <span class="id" title="var">cf</span> [<span class="id" title="var">t_acc</span>] -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> ((<span class="id" title="var">ty_list</span> <span class="id" title="var">t</span>)::<span class="id" title="var">t_acc</span>::<span class="id" title="var">S</span>) (<span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span><br/>
+| <span class="id" title="var">cmd_skip_wt</span> <span class="id" title="var">S</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_skip</span>) <span class="id" title="var">S</span>.<br/>
+<span class="id" title="keyword">Local Hint Constructors</span> <span class="id" title="var">cmd_well_typed</span> : <span class="id" title="var">core</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span>) : <span class="id" title="var">list</span> <span class="id" title="var">stack_val</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">v</span>::<span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">stack_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">stack_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<span class="id" title="var">l</span>,<span class="id" title="var">s1</span>) := <span class="id" title="var">stack_pop</span> <span class="id" title="var">s</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">out</span> := <span class="id" title="var">val_flatmap</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">stack_peek</span> (<span class="id" title="var">interp_cmd</span> <span class="id" title="var">cf</span> [<span class="id" title="var">x</span>])) <span class="id" title="var">l</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">out</span>::<span class="id" title="var">s1</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<span class="id" title="var">l</span>,<span class="id" title="var">s</span>) := <span class="id" title="var">stack_pop</span> <span class="id" title="var">s</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<span class="id" title="var">acc</span>,<span class="id" title="var">s</span>) := <span class="id" title="var">stack_pop</span> <span class="id" title="var">s</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">out</span> := <span class="id" title="var">val_reduce</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">acc</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">stack_peek</span> (<span class="id" title="var">interp_cmd</span> <span class="id" title="var">cf</span> [<span class="id" title="var">x</span>;<span class="id" title="var">acc</span>])) <span class="id" title="var">l</span> <span class="id" title="var">acc</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> <span class="id" title="var">c'</span> (<span class="id" title="var">out</span>::<span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">interp_sound_helper</span> <span class="id" title="var">c</span> <span class="id" title="var">S</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">stack_well_typed</span> (<span class="id" title="var">interp_cmd</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>) <span class="id" title="var">S'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">interp_sound</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">stack_well_typed</span> (<span class="id" title="var">interp_cmd</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>) <span class="id" title="var">S'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">cmd_seq</span> (<span class="id" title="var">c1</span> <span class="id" title="var">c2</span> : <span class="id" title="var">stack_cmd</span>) : <span class="id" title="var">stack_cmd</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c1</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c'</span> <span class="id" title="var">c2</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">c2</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">cmd_seq_wt_helper</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span> <span class="id" title="var">S1</span> <span class="id" title="var">S2</span> <span class="id" title="var">S3</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S1</span> <span class="id" title="var">c1</span> <span class="id" title="var">S2</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S2</span> <span class="id" title="var">c2</span> <span class="id" title="var">S3</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S1</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span>) <span class="id" title="var">S3</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">cmd_seq_wt</span> <span class="id" title="var">S1</span> <span class="id" title="var">S2</span> <span class="id" title="var">S3</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S1</span> <span class="id" title="var">c1</span> <span class="id" title="var">S2</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S2</span> <span class="id" title="var">c2</span> <span class="id" title="var">S3</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S1</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span>) <span class="id" title="var">S3</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">interp_seq</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span> <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">c1</span> <span class="id" title="var">c2</span>) <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c2</span> (<span class="id" title="var">interp_cmd</span> <span class="id" title="var">c1</span> <span class="id" title="var">s</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">partial_eval</span> <span class="id" title="var">c</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c'</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_atom</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_unop</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">c'_fused</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c'_fused</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>)) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_binop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span>) <span class="id" title="var">v2</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">c'_fused</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'_fused</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_binop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>)) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">c'_fused</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'_fused</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span>)                 <br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf1</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">cf1</span>) (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_reduce</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">cf</span>) (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">cmd_skip</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">val_add</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">x</span>,<span class="id" title="var">y</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_lit</span> <span class="id" title="var">xl</span>, <span class="id" title="var">val_lit</span> <span class="id" title="var">yl</span> =&gt; <span class="id" title="var">val_lit</span> (<span class="id" title="var">xl</span> + <span class="id" title="var">yl</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span>,<span class="id" title="var">_</span> =&gt;  <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">val_square</span> <span class="id" title="var">x</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">x</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">val_lit</span> <span class="id" title="var">xl</span> =&gt; <span class="id" title="var">val_lit</span> (<span class="id" title="var">Nat.square</span> <span class="id" title="var">xl</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> =&gt;  <span class="id" title="var">val_lit</span> 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">cmd_singleton</span> := <span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">val_cons</span> <span class="id" title="var">x</span> <span class="id" title="var">val_nil</span>).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">cmd_lit</span> <span class="id" title="var">n</span> := <span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> <span class="id" title="var">n</span>).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">cmd_cons</span> := <span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_cons</span>.<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">cmd_add</span> := <span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test1</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 2) (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 4) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test2</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 5) (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="id" title="var">cmd_unop</span> (<span class="id" title="var">val_add</span> (<span class="id" title="var">val_lit</span> 5)) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test3</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v</span> =&gt; <span class="id" title="var">val_square</span> (<span class="id" title="var">val_square</span> <span class="id" title="var">v</span>)) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test4</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="id" title="var">cmd_binop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> =&gt; <span class="id" title="var">val_square</span> (<span class="id" title="var">val_add</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>)) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test5</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_swap</span> 0 2 (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 2) (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 3) (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> <span class="id" title="var">cmd_skip</span>))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">cmd_swap</span> 0 2 (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 5) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test6</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 1) (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> <span class="id" title="var">cmd_skip</span>))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">val_square</span> (<span class="id" title="var">val_add</span> (<span class="id" title="var">val_lit</span> 1) (<span class="id" title="var">val_square</span> <span class="id" title="var">x</span>))) <span class="id" title="var">cmd_skip</span>.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_test7</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">partial_eval</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 2) (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 2) (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v2</span> =&gt; <span class="id" title="var">val_cons</span> (<span class="id" title="var">val_add</span> (<span class="id" title="var">val_lit</span> 2) <span class="id" title="var">v2</span>) <span class="id" title="var">val_nil</span>) <span class="id" title="var">cmd_skip</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 4) <span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_sound</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">partial_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v0</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v0</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_atom</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_unop</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">cmd_skip</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">partial_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_unop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v</span> : <span class="id" title="var">stack_val</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v</span>)) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_binop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> : <span class="id" title="var">stack_val</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span>) <span class="id" title="var">v2</span>) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">cmd_skip</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">partial_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">g</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_binop</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> : <span class="id" title="var">stack_val</span> =&gt; <span class="id" title="var">g</span> (<span class="id" title="var">f</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>)) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f0</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">f0</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c0</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">cmd_skip</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_atom_correct</span> <span class="id" title="var">c</span> <span class="id" title="var">S</span> <span class="id" title="var">S'</span> <span class="id" title="var">v</span> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">partial_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_unop_correct</span> <span class="id" title="var">c</span> <span class="id" title="var">S</span> <span class="id" title="var">S'</span> <span class="id" title="var">f</span> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">partial_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_binop_correct</span> <span class="id" title="var">c</span> <span class="id" title="var">S</span> <span class="id" title="var">S'</span> <span class="id" title="var">f</span> :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">partial_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_correct_helper</span> <span class="id" title="var">c</span> <span class="id" title="var">S</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt; <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">partial_eval_correct</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt; <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">partial_eval</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">flatmap_same</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span>:<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">forall</span> <span class="id" title="var">x</span>, <span class="id" title="var">f</span> <span class="id" title="var">x</span> = <span class="id" title="var">g</span> <span class="id" title="var">x</span>) -&gt;<br/>
+&nbsp;&nbsp;<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">l</span> = <span class="id" title="var">val_flatmap</span> <span class="id" title="var">g</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">app_assoc</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span> <span class="id" title="var">v3</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_app</span> <span class="id" title="var">v1</span> (<span class="id" title="var">val_app</span> <span class="id" title="var">v2</span> <span class="id" title="var">v3</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">val_app</span> (<span class="id" title="var">val_app</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>) <span class="id" title="var">v3</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">flatmap_app</span> <span class="id" title="var">f</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> (<span class="id" title="var">val_app</span> <span class="id" title="var">v1</span> <span class="id" title="var">v2</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">val_app</span> (<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">v1</span>) (<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> <span class="id" title="var">v2</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">flatmap_fuse_helper</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">v</span>: <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> (<span class="id" title="var">val_flatmap</span> <span class="id" title="var">g</span> <span class="id" title="var">v</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">val_flatmap</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> =&gt; <span class="id" title="var">val_flatmap</span> <span class="id" title="var">f</span> (<span class="id" title="var">g</span> <span class="id" title="var">x</span>)) <span class="id" title="var">v</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">flatmap_fuse</span> : <span class="id" title="keyword">forall</span> <span class="id" title="var">cf1</span> <span class="id" title="var">cf2</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf1</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf2</span> <span class="id" title="var">c</span>)) <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_seq</span> <span class="id" title="var">cf1</span> (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf2</span> <span class="id" title="var">cmd_skip</span>)) <span class="id" title="var">c</span>) <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">loop_fuse</span> (<span class="id" title="var">c</span> : <span class="id" title="var">stack_cmd</span>) : <span class="id" title="var">stack_cmd</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">c</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_atom</span> <span class="id" title="var">v</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_unop</span> <span class="id" title="var">f</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_binop</span> <span class="id" title="var">f</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_swap</span> <span class="id" title="var">n1</span> <span class="id" title="var">n2</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span>)                 <br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf1</span> <span class="id" title="var">c'</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf2</span> <span class="id" title="var">c''</span> =&gt; <span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_seq</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">cf1</span>) (<span class="id" title="var">cmd_flatmap</span> <span class="id" title="var">cf2</span> <span class="id" title="var">cmd_skip</span>)) <span class="id" title="var">c''</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">c'_fused</span> =&gt; <span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">cf1</span>) <span class="id" title="var">c'_fused</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> <span class="id" title="var">c'</span> =&gt; <span class="id" title="var">cmd_reduce</span> <span class="id" title="var">cf</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c'</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">cmd_skip</span> =&gt; <span class="id" title="var">cmd_skip</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">loop_fuse_test1</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">loop_fuse</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_singleton</span> (<span class="id" title="var">cmd_lit</span> 0 (<span class="id" title="var">cmd_cons</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_lit</span> 1 (<span class="id" title="var">cmd_add</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))) <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_singleton</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_lit</span> 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_cons</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_lit</span> 1 (<span class="id" title="var">cmd_add</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">loop_fuse_test2</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">loop_fuse</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">cmd_flatmap</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_singleton</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">loop_fuse_test3</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">loop_fuse</span> (<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_singleton</span> (<span class="id" title="var">cmd_lit</span> 0 (<span class="id" title="var">cmd_cons</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span> (<span class="id" title="var">cmd_lit</span> 1 (<span class="id" title="var">cmd_add</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>))) <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;= <span class="id" title="var">cmd_flatmap</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_unop</span> <span class="id" title="var">val_square</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_singleton</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_singleton</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 0)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_cons</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_flatmap</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_atom</span> (<span class="id" title="var">val_lit</span> 1)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cmd_binop</span> <span class="id" title="var">val_add</span> (<span class="id" title="var">cmd_singleton</span> <span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_skip</span>.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">loop_fuse_sound</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c</span>) <span class="id" title="var">S'</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">loop_fuse_correct</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span><br/>
+&nbsp;&nbsp;: <span class="id" title="var">cmd_well_typed</span> <span class="id" title="var">S</span> <span class="id" title="var">c</span> <span class="id" title="var">S'</span> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">forall</span> <span class="id" title="var">s</span>, <span class="id" title="var">stack_well_typed</span> <span class="id" title="var">s</span> <span class="id" title="var">S</span> -&gt; <span class="id" title="var">interp_cmd</span> (<span class="id" title="var">loop_fuse</span> <span class="id" title="var">c</span>) <span class="id" title="var">s</span> = <span class="id" title="var">interp_cmd</span> <span class="id" title="var">c</span> <span class="id" title="var">s</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Module</span> <span class="id" title="var">ImplCorrect</span> : <span class="id" title="var">Pset6Sig.S</span> := <span class="id" title="var">Impl</span>.<br/>
+
+<br/>
+</div>
+<table>
+<tr>
+<td>Global Index</td>
+<td><a href="index.html#global_A">A</a></td>
+<td>B</td>
+<td><a href="index.html#global_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td><a href="index.html#global_F">F</a></td>
+<td><a href="index.html#global_G">G</a></td>
+<td>H</td>
+<td><a href="index.html#global_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#global_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#global_N">N</a></td>
+<td><a href="index.html#global_O">O</a></td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#global_S">S</a></td>
+<td><a href="index.html#global_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#global_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#global_X">X</a></td>
+<td><a href="index.html#global_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(369 entries)</td>
+</tr>
+<tr>
+<td>Binder Index</td>
+<td><a href="index.html#binder_A">A</a></td>
+<td>B</td>
+<td><a href="index.html#binder_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td><a href="index.html#binder_F">F</a></td>
+<td><a href="index.html#binder_G">G</a></td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#binder_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#binder_N">N</a></td>
+<td><a href="index.html#binder_O">O</a></td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#binder_S">S</a></td>
+<td><a href="index.html#binder_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#binder_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#binder_X">X</a></td>
+<td><a href="index.html#binder_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(284 entries)</td>
+</tr>
+<tr>
+<td>Module Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#module_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(2 entries)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Lemma Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#lemma_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(34 entries)</td>
+</tr>
+<tr>
+<td>Constructor Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#constructor_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(22 entries)</td>
+</tr>
+<tr>
+<td>Inductive Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#inductive_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(5 entries)</td>
+</tr>
+<tr>
+<td>Abbreviation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#abbreviation_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Definition Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#definition_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(20 entries)</td>
+</tr>
+</table>
+<hr/>
+<h1>Global Index</h1>
+<a id="global_A"></a><h2>A </h2>
+<a href="Pset6.Pset6.html#acc:140">acc:140</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:142">acc:142</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:232">acc:232</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:234">acc:234</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:236">acc:236</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:238">acc:238</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:240">acc:240</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:242">acc:242</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:244">acc:244</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:246">acc:246</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_C"></a><h2>C </h2>
+<a href="Pset6.Pset6.html#cf1:266">cf1:266</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf2:267">cf2:267</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:118">cf:118</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:124">cf:124</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:85">cf:85</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:87">cf:87</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:153">c1:153</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:157">c1:157</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:165">c1:165</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:167">c1:167</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:154">c2:154</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:158">c2:158</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:166">c2:166</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:168">c2:168</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:100">c:100</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:108">c:108</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:115">c:115</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:121">c:121</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:127">c:127</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:130">c:130</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:145">c:145</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:150">c:150</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:170">c:170</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:192">c:192</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:195">c:195</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:198">c:198</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:204">c:204</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:208">c:208</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:213">c:213</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:218">c:218</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:223">c:223</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:249">c:249</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:268">c:268</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:274">c:274</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:278">c:278</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:281">c:281</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:77">c:77</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:79">c:79</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:81">c:81</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:84">c:84</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:86">c:86</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:88">c:88</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:94">c:94</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_F"></a><h2>F </h2>
+<a href="Pset6.Pset6.html#f:103">f:103</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:16">f:16</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:19">f:19</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:197">f:197</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:203">f:203</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:216">f:216</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:221">f:221</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:252">f:252</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:259">f:259</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:262">f:262</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:30">f:30</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:34">f:34</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:44">f:44</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:49">f:49</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:57">f:57</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:62">f:62</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:78">f:78</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:80">f:80</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:96">f:96</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_G"></a><h2>G </h2>
+<a href="Pset6.Pset6.html#g:253">g:253</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:263">g:263</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:58">g:58</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:63">g:63</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl">Impl</a> [module, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#ImplCorrect">ImplCorrect</a> [module, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.app_assoc">Impl.app_assoc</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_add">Impl.cmd_add</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_cons">Impl.cmd_cons</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_lit">Impl.cmd_lit</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_singleton">Impl.cmd_singleton</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq_wt">Impl.cmd_seq_wt</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq_wt_helper">Impl.cmd_seq_wt_helper</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq">Impl.cmd_seq</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_skip_wt">Impl.cmd_skip_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_reduce_wt">Impl.cmd_reduce_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_flatmap_wt">Impl.cmd_flatmap_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_swap_wt">Impl.cmd_swap_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_binop_wt">Impl.cmd_binop_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_unop_wt">Impl.cmd_unop_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_atom_wt">Impl.cmd_atom_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_well_typed">Impl.cmd_well_typed</a> [inductive, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_skip">Impl.cmd_skip</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_reduce">Impl.cmd_reduce</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_flatmap">Impl.cmd_flatmap</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_swap">Impl.cmd_swap</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_binop">Impl.cmd_binop</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_unop">Impl.cmd_unop</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_atom">Impl.cmd_atom</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_fuse">Impl.flatmap_fuse</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_fuse_helper">Impl.flatmap_fuse_helper</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_app">Impl.flatmap_app</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_same">Impl.flatmap_same</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_seq">Impl.interp_seq</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_sound">Impl.interp_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_sound_helper">Impl.interp_sound_helper</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_cmd">Impl.interp_cmd</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_correct">Impl.loop_fuse_correct</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_sound">Impl.loop_fuse_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test3">Impl.loop_fuse_test3</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test2">Impl.loop_fuse_test2</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test1">Impl.loop_fuse_test1</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse">Impl.loop_fuse</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_correct">Impl.partial_eval_correct</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_correct_helper">Impl.partial_eval_correct_helper</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_binop_correct">Impl.partial_binop_correct</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_unop_correct">Impl.partial_unop_correct</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_atom_correct">Impl.partial_atom_correct</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_binop">Impl.partial_binop</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_unop">Impl.partial_unop</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_atom">Impl.partial_atom</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_sound">Impl.partial_eval_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test7">Impl.partial_eval_test7</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test6">Impl.partial_eval_test6</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test5">Impl.partial_eval_test5</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test4">Impl.partial_eval_test4</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test3">Impl.partial_eval_test3</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test2">Impl.partial_eval_test2</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test1">Impl.partial_eval_test1</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval">Impl.partial_eval</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_cmd">Impl.stack_cmd</a> [inductive, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_peek_sound">Impl.stack_peek_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_peek">Impl.stack_peek</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_pop">Impl.stack_pop</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_binop">Impl.stack_binop</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_unop">Impl.stack_unop</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_well_typed">Impl.stack_well_typed</a> [abbreviation, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_val">Impl.stack_val</a> [inductive, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty">Impl.ty</a> [inductive, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty_list">Impl.ty_list</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty_nat">Impl.ty_nat</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_square">Impl.val_square</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_add">Impl.val_add</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce_same">Impl.val_reduce_same</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap_same">Impl.val_flatmap_same</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce_sound">Impl.val_reduce_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap_sound">Impl.val_flatmap_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_app_sound">Impl.val_app_sound</a> [lemma, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce">Impl.val_reduce</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap">Impl.val_flatmap</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_app">Impl.val_app</a> [definition, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_cons_wt">Impl.val_cons_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_nil_wt">Impl.val_nil_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_lit_wt">Impl.val_lit_wt</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_well_typed">Impl.val_well_typed</a> [inductive, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_cons">Impl.val_cons</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_nil">Impl.val_nil</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_lit">Impl.val_lit</a> [constructor, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_L"></a><h2>L </h2>
+<a href="Pset6.Pset6.html#l1:40">l1:40</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l2:41">l2:41</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:134">l:134</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:138">l:138</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:254">l:254</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:45">l:45</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:50">l:50</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:59">l:59</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:64">l:64</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_N"></a><h2>N </h2>
+<a href="Pset6.Pset6.html#n1:113">n1:113</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n1:82">n1:82</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n2:114">n2:114</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n2:83">n2:83</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:11">n:11</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:185">n:185</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:3">n:3</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_O"></a><h2>O </h2>
+<a href="Pset6.Pset6.html#out:137">out:137</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#out:144">out:144</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_P"></a><h2>P </h2>
+<a href="Pset6.html">Pset6</a> [library]<br/>
+<br/><br/><a id="global_S"></a><h2>S </h2>
+<a href="Pset6.Pset6.html#S':101">S':101</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':109">S':109</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':116">S':116</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':122">S':122</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':128">S':128</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':147">S':147</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':151">S':151</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':193">S':193</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':210">S':210</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':215">S':215</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':220">S':220</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':225">S':225</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':250">S':250</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':279">S':279</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':282">S':282</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':95">S':95</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s1:135">s1:135</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S1:159">S1:159</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S1:162">S1:162</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S2:160">S2:160</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S2:163">S2:163</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S3:161">S3:161</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S3:164">S3:164</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:107">S:107</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:112">S:112</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:117">S:117</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:123">S:123</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:129">S:129</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:131">s:131</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:139">s:139</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:141">s:141</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:146">S:146</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:148">s:148</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:149">S:149</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:152">s:152</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:169">s:169</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:17">s:17</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:191">S:191</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:20">s:20</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:209">S:209</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:212">s:212</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:214">S:214</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:217">s:217</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:219">S:219</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:22">s:22</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:222">s:222</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:224">S:224</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:226">s:226</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:24">s:24</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:248">S:248</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:251">s:251</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:269">s:269</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:277">S:277</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:280">S:280</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:283">s:283</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:55">S:55</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:56">s:56</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:93">S:93</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:99">S:99</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_T"></a><h2>T </h2>
+<a href="Pset6.Pset6.html#tacc:48">tacc:48</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#tacc:66">tacc:66</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t_acc:126">t_acc:126</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:104">t1:104</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:119">t1:119</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:42">t1:42</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:97">t1:97</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:105">t2:105</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:120">t2:120</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:43">t2:43</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:98">t2:98</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t3:106">t3:106</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:12">t:12</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:125">t:125</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:13">t:13</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:39">t:39</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:47">t:47</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:54">t:54</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:60">t:60</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:67">t:67</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:8">t:8</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:92">t:92</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_V"></a><h2>V </h2>
+<a href="Pset6.Pset6.html#vacc:36">vacc:36</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vacc:51">vacc:51</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vacc:65">vacc:65</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vl:35">vl:35</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:110">v1:110</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:14">v1:14</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:174">v1:174</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:176">v1:176</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:187">v1:187</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:201">v1:201</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:206">v1:206</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:256">v1:256</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:26">v1:26</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:260">v1:260</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:4">v1:4</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:111">v2:111</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:15">v2:15</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:175">v2:175</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:177">v2:177</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:188">v2:188</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:190">v2:190</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:202">v2:202</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:207">v2:207</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:257">v2:257</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:261">v2:261</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:27">v2:27</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:5">v2:5</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v3:258">v3:258</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:102">v:102</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:173">v:173</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:186">v:186</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:194">v:194</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:200">v:200</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:211">v:211</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:264">v:264</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:31">v:31</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:76">v:76</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:91">v:91</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_X"></a><h2>X </h2>
+<a href="Pset6.Pset6.html#x0:227">x0:227</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:228">x0:228</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:229">x0:229</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:230">x0:230</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:231">x0:231</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:284">x0:284</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:285">x0:285</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:286">x0:286</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:287">x0:287</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:288">x0:288</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:289">x0:289</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:290">x0:290</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:291">x0:291</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:292">x0:292</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:293">x0:293</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:294">x0:294</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:295">x0:295</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:296">x0:296</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:297">x0:297</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:298">x0:298</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:299">x0:299</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:300">x0:300</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:301">x0:301</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:302">x0:302</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:303">x0:303</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:304">x0:304</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:305">x0:305</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:306">x0:306</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:307">x0:307</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:308">x0:308</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:309">x0:309</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:310">x0:310</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:311">x0:311</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:312">x0:312</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:313">x0:313</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:314">x0:314</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:315">x0:315</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:316">x0:316</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:317">x0:317</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:318">x0:318</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:233">x1:233</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:235">x1:235</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:237">x1:237</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:239">x1:239</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:241">x1:241</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:243">x1:243</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:245">x1:245</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:247">x1:247</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:136">x:136</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:143">x:143</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:178">x:178</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:182">x:182</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:184">x:184</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:189">x:189</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:255">x:255</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:265">x:265</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:270">x:270</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:271">x:271</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:272">x:272</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:273">x:273</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:46">x:46</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:52">x:52</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:61">x:61</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:68">x:68</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:70">x:70</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:72">x:72</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="global_Y"></a><h2>Y </h2>
+<a href="Pset6.Pset6.html#y:179">y:179</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:53">y:53</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:69">y:69</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:71">y:71</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:73">y:73</a> [binder, in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Binder Index</h1>
+<a id="binder_A"></a><h2>A </h2>
+<a href="Pset6.Pset6.html#acc:140">acc:140</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:142">acc:142</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:232">acc:232</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:234">acc:234</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:236">acc:236</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:238">acc:238</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:240">acc:240</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:242">acc:242</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:244">acc:244</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#acc:246">acc:246</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_C"></a><h2>C </h2>
+<a href="Pset6.Pset6.html#cf1:266">cf1:266</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf2:267">cf2:267</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:118">cf:118</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:124">cf:124</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:85">cf:85</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#cf:87">cf:87</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:153">c1:153</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:157">c1:157</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:165">c1:165</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c1:167">c1:167</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:154">c2:154</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:158">c2:158</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:166">c2:166</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c2:168">c2:168</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:100">c:100</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:108">c:108</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:115">c:115</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:121">c:121</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:127">c:127</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:130">c:130</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:145">c:145</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:150">c:150</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:170">c:170</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:192">c:192</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:195">c:195</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:198">c:198</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:204">c:204</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:208">c:208</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:213">c:213</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:218">c:218</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:223">c:223</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:249">c:249</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:268">c:268</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:274">c:274</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:278">c:278</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:281">c:281</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:77">c:77</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:79">c:79</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:81">c:81</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:84">c:84</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:86">c:86</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:88">c:88</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#c:94">c:94</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_F"></a><h2>F </h2>
+<a href="Pset6.Pset6.html#f:103">f:103</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:16">f:16</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:19">f:19</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:197">f:197</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:203">f:203</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:216">f:216</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:221">f:221</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:252">f:252</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:259">f:259</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:262">f:262</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:30">f:30</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:34">f:34</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:44">f:44</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:49">f:49</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:57">f:57</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:62">f:62</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:78">f:78</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:80">f:80</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#f:96">f:96</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_G"></a><h2>G </h2>
+<a href="Pset6.Pset6.html#g:253">g:253</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:263">g:263</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:58">g:58</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#g:63">g:63</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_L"></a><h2>L </h2>
+<a href="Pset6.Pset6.html#l1:40">l1:40</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l2:41">l2:41</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:134">l:134</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:138">l:138</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:254">l:254</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:45">l:45</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:50">l:50</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:59">l:59</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#l:64">l:64</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_N"></a><h2>N </h2>
+<a href="Pset6.Pset6.html#n1:113">n1:113</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n1:82">n1:82</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n2:114">n2:114</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n2:83">n2:83</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:11">n:11</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:185">n:185</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#n:3">n:3</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_O"></a><h2>O </h2>
+<a href="Pset6.Pset6.html#out:137">out:137</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#out:144">out:144</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_S"></a><h2>S </h2>
+<a href="Pset6.Pset6.html#S':101">S':101</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':109">S':109</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':116">S':116</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':122">S':122</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':128">S':128</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':147">S':147</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':151">S':151</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':193">S':193</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':210">S':210</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':215">S':215</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':220">S':220</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':225">S':225</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':250">S':250</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':279">S':279</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':282">S':282</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S':95">S':95</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s1:135">s1:135</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S1:159">S1:159</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S1:162">S1:162</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S2:160">S2:160</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S2:163">S2:163</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S3:161">S3:161</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S3:164">S3:164</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:107">S:107</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:112">S:112</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:117">S:117</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:123">S:123</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:129">S:129</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:131">s:131</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:139">s:139</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:141">s:141</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:146">S:146</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:148">s:148</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:149">S:149</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:152">s:152</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:169">s:169</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:17">s:17</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:191">S:191</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:20">s:20</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:209">S:209</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:212">s:212</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:214">S:214</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:217">s:217</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:219">S:219</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:22">s:22</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:222">s:222</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:224">S:224</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:226">s:226</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:24">s:24</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:248">S:248</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:251">s:251</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:269">s:269</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:277">S:277</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:280">S:280</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:283">s:283</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:55">S:55</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#s:56">s:56</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:93">S:93</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#S:99">S:99</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_T"></a><h2>T </h2>
+<a href="Pset6.Pset6.html#tacc:48">tacc:48</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#tacc:66">tacc:66</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t_acc:126">t_acc:126</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:104">t1:104</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:119">t1:119</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:42">t1:42</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t1:97">t1:97</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:105">t2:105</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:120">t2:120</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:43">t2:43</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t2:98">t2:98</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t3:106">t3:106</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:12">t:12</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:125">t:125</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:13">t:13</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:39">t:39</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:47">t:47</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:54">t:54</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:60">t:60</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:67">t:67</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:8">t:8</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#t:92">t:92</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_V"></a><h2>V </h2>
+<a href="Pset6.Pset6.html#vacc:36">vacc:36</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vacc:51">vacc:51</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vacc:65">vacc:65</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#vl:35">vl:35</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:110">v1:110</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:14">v1:14</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:174">v1:174</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:176">v1:176</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:187">v1:187</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:201">v1:201</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:206">v1:206</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:256">v1:256</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:26">v1:26</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:260">v1:260</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v1:4">v1:4</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:111">v2:111</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:15">v2:15</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:175">v2:175</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:177">v2:177</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:188">v2:188</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:190">v2:190</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:202">v2:202</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:207">v2:207</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:257">v2:257</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:261">v2:261</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:27">v2:27</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v2:5">v2:5</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v3:258">v3:258</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:102">v:102</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:173">v:173</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:186">v:186</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:194">v:194</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:200">v:200</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:211">v:211</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:264">v:264</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:31">v:31</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:76">v:76</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#v:91">v:91</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_X"></a><h2>X </h2>
+<a href="Pset6.Pset6.html#x0:227">x0:227</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:228">x0:228</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:229">x0:229</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:230">x0:230</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:231">x0:231</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:284">x0:284</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:285">x0:285</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:286">x0:286</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:287">x0:287</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:288">x0:288</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:289">x0:289</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:290">x0:290</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:291">x0:291</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:292">x0:292</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:293">x0:293</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:294">x0:294</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:295">x0:295</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:296">x0:296</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:297">x0:297</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:298">x0:298</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:299">x0:299</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:300">x0:300</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:301">x0:301</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:302">x0:302</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:303">x0:303</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:304">x0:304</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:305">x0:305</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:306">x0:306</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:307">x0:307</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:308">x0:308</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:309">x0:309</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:310">x0:310</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:311">x0:311</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:312">x0:312</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:313">x0:313</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:314">x0:314</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:315">x0:315</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:316">x0:316</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:317">x0:317</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x0:318">x0:318</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:233">x1:233</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:235">x1:235</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:237">x1:237</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:239">x1:239</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:241">x1:241</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:243">x1:243</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:245">x1:245</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x1:247">x1:247</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:136">x:136</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:143">x:143</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:178">x:178</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:182">x:182</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:184">x:184</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:189">x:189</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:255">x:255</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:265">x:265</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:270">x:270</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:271">x:271</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:272">x:272</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:273">x:273</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:46">x:46</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:52">x:52</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:61">x:61</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:68">x:68</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:70">x:70</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#x:72">x:72</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><a id="binder_Y"></a><h2>Y </h2>
+<a href="Pset6.Pset6.html#y:179">y:179</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:53">y:53</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:69">y:69</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:71">y:71</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#y:73">y:73</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Module Index</h1>
+<a id="module_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl">Impl</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#ImplCorrect">ImplCorrect</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Library Index</h1>
+<a id="library_P"></a><h2>P </h2>
+<a href="Pset6.html">Pset6</a> <br/>
+<br/><br/><hr/>
+<h1>Lemma Index</h1>
+<a id="lemma_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl.app_assoc">Impl.app_assoc</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq_wt">Impl.cmd_seq_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq_wt_helper">Impl.cmd_seq_wt_helper</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_fuse">Impl.flatmap_fuse</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_fuse_helper">Impl.flatmap_fuse_helper</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_app">Impl.flatmap_app</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.flatmap_same">Impl.flatmap_same</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_seq">Impl.interp_seq</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_sound">Impl.interp_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_sound_helper">Impl.interp_sound_helper</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_correct">Impl.loop_fuse_correct</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_sound">Impl.loop_fuse_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test3">Impl.loop_fuse_test3</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test2">Impl.loop_fuse_test2</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse_test1">Impl.loop_fuse_test1</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_correct">Impl.partial_eval_correct</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_correct_helper">Impl.partial_eval_correct_helper</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_binop_correct">Impl.partial_binop_correct</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_unop_correct">Impl.partial_unop_correct</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_atom_correct">Impl.partial_atom_correct</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_sound">Impl.partial_eval_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test7">Impl.partial_eval_test7</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test6">Impl.partial_eval_test6</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test5">Impl.partial_eval_test5</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test4">Impl.partial_eval_test4</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test3">Impl.partial_eval_test3</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test2">Impl.partial_eval_test2</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval_test1">Impl.partial_eval_test1</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_peek_sound">Impl.stack_peek_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce_same">Impl.val_reduce_same</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap_same">Impl.val_flatmap_same</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce_sound">Impl.val_reduce_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap_sound">Impl.val_flatmap_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_app_sound">Impl.val_app_sound</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Constructor Index</h1>
+<a id="constructor_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl.cmd_skip_wt">Impl.cmd_skip_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_reduce_wt">Impl.cmd_reduce_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_flatmap_wt">Impl.cmd_flatmap_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_swap_wt">Impl.cmd_swap_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_binop_wt">Impl.cmd_binop_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_unop_wt">Impl.cmd_unop_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_atom_wt">Impl.cmd_atom_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_skip">Impl.cmd_skip</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_reduce">Impl.cmd_reduce</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_flatmap">Impl.cmd_flatmap</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_swap">Impl.cmd_swap</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_binop">Impl.cmd_binop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_unop">Impl.cmd_unop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_atom">Impl.cmd_atom</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty_list">Impl.ty_list</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty_nat">Impl.ty_nat</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_cons_wt">Impl.val_cons_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_nil_wt">Impl.val_nil_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_lit_wt">Impl.val_lit_wt</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_cons">Impl.val_cons</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_nil">Impl.val_nil</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_lit">Impl.val_lit</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Inductive Index</h1>
+<a id="inductive_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl.cmd_well_typed">Impl.cmd_well_typed</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_cmd">Impl.stack_cmd</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_val">Impl.stack_val</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.ty">Impl.ty</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_well_typed">Impl.val_well_typed</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Abbreviation Index</h1>
+<a id="abbreviation_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl.stack_well_typed">Impl.stack_well_typed</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/>
+<h1>Definition Index</h1>
+<a id="definition_I"></a><h2>I </h2>
+<a href="Pset6.Pset6.html#Impl.cmd_add">Impl.cmd_add</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_cons">Impl.cmd_cons</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_lit">Impl.cmd_lit</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_singleton">Impl.cmd_singleton</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.cmd_seq">Impl.cmd_seq</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.interp_cmd">Impl.interp_cmd</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.loop_fuse">Impl.loop_fuse</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_binop">Impl.partial_binop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_unop">Impl.partial_unop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_atom">Impl.partial_atom</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.partial_eval">Impl.partial_eval</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_peek">Impl.stack_peek</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_pop">Impl.stack_pop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_binop">Impl.stack_binop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.stack_unop">Impl.stack_unop</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_square">Impl.val_square</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_add">Impl.val_add</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_reduce">Impl.val_reduce</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_flatmap">Impl.val_flatmap</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<a href="Pset6.Pset6.html#Impl.val_app">Impl.val_app</a> [in <a href="Pset6.Pset6.html">Pset6.Pset6</a>]<br/>
+<br/><br/><hr/><table>
+<tr>
+<td>Global Index</td>
+<td><a href="index.html#global_A">A</a></td>
+<td>B</td>
+<td><a href="index.html#global_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td><a href="index.html#global_F">F</a></td>
+<td><a href="index.html#global_G">G</a></td>
+<td>H</td>
+<td><a href="index.html#global_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#global_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#global_N">N</a></td>
+<td><a href="index.html#global_O">O</a></td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#global_S">S</a></td>
+<td><a href="index.html#global_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#global_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#global_X">X</a></td>
+<td><a href="index.html#global_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(369 entries)</td>
+</tr>
+<tr>
+<td>Binder Index</td>
+<td><a href="index.html#binder_A">A</a></td>
+<td>B</td>
+<td><a href="index.html#binder_C">C</a></td>
+<td>D</td>
+<td>E</td>
+<td><a href="index.html#binder_F">F</a></td>
+<td><a href="index.html#binder_G">G</a></td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td><a href="index.html#binder_L">L</a></td>
+<td>M</td>
+<td><a href="index.html#binder_N">N</a></td>
+<td><a href="index.html#binder_O">O</a></td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td><a href="index.html#binder_S">S</a></td>
+<td><a href="index.html#binder_T">T</a></td>
+<td>U</td>
+<td><a href="index.html#binder_V">V</a></td>
+<td>W</td>
+<td><a href="index.html#binder_X">X</a></td>
+<td><a href="index.html#binder_Y">Y</a></td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(284 entries)</td>
+</tr>
+<tr>
+<td>Module Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#module_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(2 entries)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Lemma Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#lemma_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(34 entries)</td>
+</tr>
+<tr>
+<td>Constructor Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#constructor_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(22 entries)</td>
+</tr>
+<tr>
+<td>Inductive Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#inductive_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(5 entries)</td>
+</tr>
+<tr>
+<td>Abbreviation Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#abbreviation_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Definition Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td><a href="index.html#definition_I">I</a></td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td>P</td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(20 entries)</td>
+</tr>
+</table>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
